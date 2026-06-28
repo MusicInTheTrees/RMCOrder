@@ -3,6 +3,7 @@ const requireAuth = require('../middleware/requireAuth');
 const { listFiles, createFolder, createSpreadsheet } = require('../drive/client');
 const { generateOrderId } = require('./idGenerator');
 const { writeOrderCache, readOrderCache } = require('./cache');
+const { initOrderSheet } = require('../sheets/orderSheet');
 const config = require('../config');
 
 const router = express.Router();
@@ -47,6 +48,7 @@ router.post('/', async (_req, res) => {
       lineItems: [],
     };
     writeOrderCache(orderId, orderData);
+    await initOrderSheet(sheetId, orderData);
 
     res.json({ orderId, sheetId, folderId });
   } catch (err) {
