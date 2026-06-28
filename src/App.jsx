@@ -2,9 +2,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import LandingScreen from './components/LandingScreen';
 import OrdersList from './components/OrdersList';
 import OrderBuilder from './components/OrderBuilder';
-
-// Placeholders — replaced in later tasks
-function SettingsScreen() { return <div>Settings</div>; }
+import SettingsScreen from './components/SettingsScreen';
 
 export default function App() {
   return (
