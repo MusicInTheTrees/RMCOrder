@@ -11,11 +11,15 @@ fs.mkdirSync(config.DESIGNS_CACHE_DIR, { recursive: true });
 fs.mkdirSync(config.ORDERS_CACHE_DIR, { recursive: true });
 app.use('/designs-cache', express.static(config.DESIGNS_CACHE_DIR));
 
+// Sync designs on startup (non-blocking)
+const { syncDesignsCache } = require('./drive/designsCache');
+syncDesignsCache().catch(err => console.warn('Design sync skipped:', err.message));
+
 app.get('/health', (_req, res) => res.json({ ok: true }));
 
 // Routers mounted in later tasks (leave these commented out for now):
 app.use('/auth', require('./auth/router'));
-// app.use('/drive', require('./drive/router'));
+app.use('/drive', require('./drive/router'));
 // app.use('/sheets', require('./sheets/router'));
 // app.use('/orders', require('./orders/router'));
 // app.use('/gmail', require('./gmail/router'));
