@@ -165,7 +165,7 @@ Shows saved account or OAuth prompt (see Authentication section above).
 ### Orders List (Home Screen)
 - Lists all orders found in the Top Level Order Folder in Drive
 - Each order shows: order ID, creation date, state badge (color-coded)
-- "New Order" button creates a new order folder in Drive and its Sheet, then opens the Order Builder
+- "New Order" button immediately creates the Drive subfolder and Google Sheet (so the order exists in Drive from the moment it's created), then opens the Order Builder
 - Clicking an existing order opens it in the Order Builder
 
 ### Order Builder
@@ -173,7 +173,7 @@ Shows saved account or OAuth prompt (see Authentication section above).
 **Top bar:**
 - Order ID (read-only)
 - State badge — click to advance to the next state (with confirmation for `sent`, since that implies the draft has been sent)
-- "Generate Email Draft" button — disabled while state is `building`; enabled from `sent` onward for regeneration if needed
+- "Generate Email Draft" button — always available; primary use is while in `building` state to create the initial draft, but can be used at any state to regenerate
 
 **Design Browser (sidebar or panel):**
 - Grid of design images loaded from `designs-cache/`
