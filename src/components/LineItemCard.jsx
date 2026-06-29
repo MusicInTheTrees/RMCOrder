@@ -2,7 +2,7 @@ import { useState } from 'react';
 import SizeButtons from './SizeButtons';
 import ConfirmDialog from './ConfirmDialog';
 
-export default function LineItemCard({ item, items = [], onChange, onRemove, onAddDesign }) {
+export default function LineItemCard({ item, items = [], onChange, onRemove, onAddDesign, getStock = null }) {
   const [confirmRemove, setConfirmRemove] = useState(false);
 
   const selectedCatalogItem = items.find(i => i.id === item.itemTypeId) || null;
@@ -10,6 +10,14 @@ export default function LineItemCard({ item, items = [], onChange, onRemove, onA
   const activeSizes    = selectedCatalogItem?.sizes.filter(s => s.active).sort((a, b) => a.order - b.order).map(s => s.label) || [];
   const activeMethods  = selectedCatalogItem?.decorationMethods.filter(m => m.active) || [];
   const isLegacy       = !item.itemTypeId && !!item.apparelType;
+
+  const invItem  = selectedCatalogItem?.inventoryItem || null;
+  const invStyle = selectedCatalogItem?.inventoryStyle || '';
+
+  // Returns stock count for the current color + given size
+  const stockForSize = (invItem && getStock)
+    ? (size) => getStock(invItem, item.color, invStyle, size)
+    : null;
 
   function update(field, value) {
     onChange({ ...item, [field]: value });
@@ -26,6 +34,21 @@ export default function LineItemCard({ item, items = [], onChange, onRemove, onA
       frontMethod: '',
       backMethod: '',
     });
+  }
+
+  function handleColorChange(colorName) {
+    // Recalculate inv for all existing sizes based on the new color
+    let updatedSizes = item.sizes || {};
+    if (invItem && getStock) {
+      updatedSizes = Object.fromEntries(
+        Object.entries(item.sizes || {}).map(([size, v]) => {
+          const stock = getStock(invItem, colorName, invStyle, size);
+          const inv = Math.min(v.total, stock);
+          return [size, { ...v, inventory: inv }];
+        })
+      );
+    }
+    onChange({ ...item, color: colorName, sizes: updatedSizes });
   }
 
   function removeDesign(placement, idx) {
@@ -73,7 +96,7 @@ export default function LineItemCard({ item, items = [], onChange, onRemove, onA
               <button
                 key={c.name}
                 className={item.color === c.name ? 'active' : ''}
-                onClick={() => update('color', c.name)}
+                onClick={() => handleColorChange(c.name)}
                 style={{ display: 'flex', alignItems: 'center', gap: 6 }}
               >
                 <span
@@ -97,6 +120,7 @@ export default function LineItemCard({ item, items = [], onChange, onRemove, onA
             sizeLabels={activeSizes}
             sizes={item.sizes}
             onChange={sizes => update('sizes', sizes)}
+            stockForSize={stockForSize}
           />
         ) : isLegacy ? null : (
           <p className="field-placeholder">{item.itemTypeId ? 'No active sizes — configure in Settings.' : 'Select an item type first.'}</p>

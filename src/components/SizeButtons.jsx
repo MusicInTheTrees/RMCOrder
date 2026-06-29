@@ -1,11 +1,12 @@
-export default function SizeButtons({ sizeLabels = [], sizes = {}, onChange }) {
+export default function SizeButtons({ sizeLabels = [], sizes = {}, onChange, stockForSize = null }) {
   function getVal(size, key) {
     return sizes[size]?.[key] ?? 0;
   }
 
   function setTotal(size, rawValue) {
     const next = Math.max(0, parseInt(rawValue, 10) || 0);
-    const inv = Math.min(getVal(size, 'inventory'), next);
+    const stock = stockForSize ? stockForSize(size) : 0;
+    const inv = next === 0 ? 0 : Math.min(next, stock);
     onChange({ ...sizes, [size]: { total: next, inventory: inv } });
   }
 

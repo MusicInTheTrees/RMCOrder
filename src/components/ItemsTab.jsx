@@ -256,6 +256,22 @@ export default function ItemsTab() {
                 />
               </div>
               <div className="field-group">
+                <label>Inventory Item</label>
+                <input
+                  value={selectedItem.inventoryItem || ''}
+                  onChange={e => updateField('inventoryItem', e.target.value)}
+                  placeholder="e.g. shirt, tote"
+                />
+              </div>
+              <div className="field-group">
+                <label>Inventory Style</label>
+                <input
+                  value={selectedItem.inventoryStyle || ''}
+                  onChange={e => updateField('inventoryStyle', e.target.value)}
+                  placeholder="e.g. Unisex, V-Neck"
+                />
+              </div>
+              <div className="field-group">
                 <label>Supplier URL</label>
                 <div style={{ display: 'flex', gap: 8 }}>
                   <input

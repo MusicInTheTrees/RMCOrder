@@ -4,7 +4,9 @@ import { useOrder } from '../hooks/useOrder';
 import { useItems } from '../hooks/useItems';
 import { createDraft } from '../api/gmail';
 import { getSettings } from '../api/settings';
+import { decrementInventory } from '../api/inventory';
 import { useBugLog } from '../context/BugLogContext';
+import { useInventory } from '../hooks/useInventory';
 import OrderTopBar from './OrderTopBar';
 import LineItemCard from './LineItemCard';
 import DesignBrowser from './DesignBrowser';
@@ -24,6 +26,7 @@ export default function OrderBuilder() {
   const { order, setOrder, saving, offline, syncPending, saveNow } = useOrder(sheetId);
   const { catalog } = useItems();
   const { logError } = useBugLog();
+  const { getStock } = useInventory();
   const [selectingDesign, setSelectingDesign] = useState(null); // { num, placement: 'front'|'back' }
   const [toast, setToast] = useState(null);
   const [saveMsg, setSaveMsg] = useState(null);
@@ -103,7 +106,27 @@ export default function OrderBuilder() {
     }
   }
 
-  function handleAdvanceState(nextState) {
+  async function handleAdvanceState(nextState) {
+    if (nextState === 'sent') {
+      const decrements = [];
+      for (const li of order.lineItems) {
+        const catalogItem = catalog.items.find(i => i.id === li.itemTypeId);
+        if (!catalogItem?.inventoryItem) continue;
+        const { inventoryItem, inventoryStyle = '' } = catalogItem;
+        for (const [size, v] of Object.entries(li.sizes || {})) {
+          if ((v?.inventory ?? 0) > 0) {
+            decrements.push({ item: inventoryItem, color: li.color, style: inventoryStyle, size, qty: v.inventory });
+          }
+        }
+      }
+      if (decrements.length > 0) {
+        try {
+          await decrementInventory(decrements);
+        } catch (err) {
+          logError(`Failed to update blank inventory: ${err.message}`);
+        }
+      }
+    }
     setOrder(prev => ({ ...prev, state: nextState }));
   }
 
@@ -140,6 +163,7 @@ export default function OrderBuilder() {
               onChange={updated => updateLineItem(item.num, updated)}
               onRemove={() => removeLineItem(item.num)}
               onAddDesign={(placement) => setSelectingDesign({ num: item.num, placement })}
+              getStock={getStock}
             />
           ))}
           <button className="btn-secondary add-line-item" onClick={addLineItem}>
