@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useParams, useSearchParams, useNavigate } from 'react-router-dom';
 import { useOrder } from '../hooks/useOrder';
+import { useItems } from '../hooks/useItems';
 import { createDraft } from '../api/gmail';
 import { getSettings } from '../api/settings';
 import OrderTopBar from './OrderTopBar';
@@ -20,6 +21,7 @@ export default function OrderBuilder() {
   const sheetId = searchParams.get('sheetId');
   const navigate = useNavigate();
   const { order, setOrder, saving, offline, syncPending, saveNow } = useOrder(sheetId);
+  const { catalog } = useItems();
   const [selectingDesign, setSelectingDesign] = useState(null); // { num, placement: 'front'|'back' }
   const [toast, setToast] = useState(null);
   const [saveMsg, setSaveMsg] = useState(null);
@@ -38,13 +40,16 @@ export default function OrderBuilder() {
       ...prev,
       lineItems: [...prev.lineItems, {
         num,
-        apparelType: '',
+        itemTypeId: '',
+        itemTypeName: '',
         color: '',
         sizes: {},
         frontDesigns: [],
         frontNotes: '',
+        frontMethod: '',
         backDesigns: defaultBackDesign ? [{ designNum: '1', file: defaultBackDesign }] : [],
         backNotes: defaultBackNotes || '',
+        backMethod: '',
       }],
     }));
   }
@@ -111,12 +116,20 @@ export default function OrderBuilder() {
         onNameChange={name => setOrder(prev => ({ ...prev, orderName: name }))}
       />
 
+      <textarea
+        className="order-notes"
+        value={order.notes || ''}
+        onChange={e => setOrder(prev => ({ ...prev, notes: e.target.value }))}
+        placeholder="Order notes — e.g. All shirts DTG unless noted per placement"
+      />
+
       <div className="builder-body">
         <div className="line-items">
           {order.lineItems.map(item => (
             <LineItemCard
               key={item.num}
               item={item}
+              items={catalog.items}
               onChange={updated => updateLineItem(item.num, updated)}
               onRemove={() => removeLineItem(item.num)}
               onAddDesign={(placement) => setSelectingDesign({ num: item.num, placement })}
