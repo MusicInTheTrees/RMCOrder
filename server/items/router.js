@@ -2,6 +2,9 @@ const express = require('express');
 const { createId } = require('@paralleldrive/cuid2');
 const requireAuth = require('../middleware/requireAuth');
 const { readCatalog, writeCatalog } = require('./store');
+const config = require('../config');
+const { findFileByName, uploadFileContent, downloadFileContent } = require('../drive/client');
+const CATALOG_DRIVE_NAME = 'items-catalog.json';
 
 const router = express.Router();
 router.use(requireAuth);
@@ -20,12 +23,27 @@ router.post('/', (req, res) => {
 });
 
 // push and pull routes must come before /:id to avoid capture
-router.post('/push', async (req, res) => {
-  res.status(501).json({ error: 'Not implemented — see Task 2' });
+router.post('/push', async (_req, res) => {
+  try {
+    const catalog = readCatalog();
+    await uploadFileContent(CATALOG_DRIVE_NAME, JSON.stringify(catalog, null, 2), config.DRIVE.TOP_LEVEL_FOLDER);
+    res.json({ ok: true });
+  } catch (err) {
+    res.json({ error: err.message });
+  }
 });
 
-router.post('/pull', async (req, res) => {
-  res.status(501).json({ error: 'Not implemented — see Task 2' });
+router.post('/pull', async (_req, res) => {
+  try {
+    const file = await findFileByName(CATALOG_DRIVE_NAME, config.DRIVE.TOP_LEVEL_FOLDER);
+    if (!file) return res.json({ error: 'No catalog found on Drive' });
+    const content = await downloadFileContent(file.id);
+    const catalog = JSON.parse(content);
+    writeCatalog(catalog);
+    res.json(catalog);
+  } catch (err) {
+    res.json({ error: err.message });
+  }
 });
 
 router.put('/:id', (req, res) => {

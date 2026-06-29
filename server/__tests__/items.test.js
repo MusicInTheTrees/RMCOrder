@@ -66,3 +66,30 @@ test('PUT /items/:id returns 404 for unknown id', async () => {
   const res = await request(app).put('/items/nonexistent').send({ name: 'x' });
   expect(res.status).toBe(404);
 });
+
+test('POST /items/push returns ok (mocked drive)', async () => {
+  jest.mock('../drive/client', () => ({
+    findFileByName: jest.fn().mockResolvedValue(null),
+    uploadFileContent: jest.fn().mockResolvedValue('file-id-123'),
+    downloadFileContent: jest.fn(),
+    findFolderByName: jest.fn(),
+  }));
+  const app = getApp();
+  await request(app).post('/items').send({ name: 'Tee' });
+  const res = await request(app).post('/items/push');
+  expect(res.status).toBe(200);
+  expect(res.body.ok).toBe(true);
+});
+
+test('POST /items/pull returns error when no catalog on Drive', async () => {
+  jest.mock('../drive/client', () => ({
+    findFileByName: jest.fn().mockResolvedValue(null),
+    uploadFileContent: jest.fn(),
+    downloadFileContent: jest.fn(),
+    findFolderByName: jest.fn(),
+  }));
+  const app = getApp();
+  const res = await request(app).post('/items/pull');
+  expect(res.status).toBe(200);
+  expect(res.body.error).toMatch(/No catalog/i);
+});

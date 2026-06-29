@@ -72,6 +72,33 @@ async function findFileByName(name, parentId) {
   return res.data.files?.[0] || null;
 }
 
+async function uploadFileContent(name, content, parentId) {
+  const drive = getDrive();
+  const existing = await findFileByName(name, parentId);
+  const media = { mimeType: 'application/json', body: content };
+  if (existing) {
+    await drive.files.update({ fileId: existing.id, media });
+    return existing.id;
+  }
+  const res = await drive.files.create({
+    resource: { name, parents: [parentId] },
+    media,
+    fields: 'id',
+  });
+  return res.data.id;
+}
+
+async function downloadFileContent(fileId) {
+  const drive = getDrive();
+  const chunks = [];
+  const res = await drive.files.get({ fileId, alt: 'media' }, { responseType: 'stream' });
+  return new Promise((resolve, reject) => {
+    res.data.on('data', chunk => chunks.push(chunk));
+    res.data.on('end', () => resolve(Buffer.concat(chunks).toString('utf8')));
+    res.data.on('error', reject);
+  });
+}
+
 module.exports = {
   listFiles,
   downloadFile,
@@ -81,4 +108,6 @@ module.exports = {
   getFileMetadata,
   findFolderByName,
   findFileByName,
+  uploadFileContent,
+  downloadFileContent,
 };
