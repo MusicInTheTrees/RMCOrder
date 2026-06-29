@@ -3,9 +3,11 @@ import { useNavigate } from 'react-router-dom';
 import { getSettings, saveSettings } from '../api/settings';
 import { getAuthStatus, logout } from '../api/auth';
 import DesignPicker from './DesignPicker';
+import ItemsTab from './ItemsTab';
 import Toast from './Toast';
 
 export default function SettingsScreen() {
+  const [tab, setTab] = useState('system');
   const [settings, setSettings] = useState({
     brandName: '',
     spewEmail: '',
@@ -44,41 +46,52 @@ export default function SettingsScreen() {
       <button onClick={() => navigate('/orders')}>← Back</button>
       <h2>Settings</h2>
 
-      <div className="field-group">
-        <label>Brand Name (back-print reference)</label>
-        <input value={settings.brandName} onChange={set('brandName')} />
+      <div className="settings-tabs">
+        <button
+          className={`settings-tab${tab === 'system' ? ' active' : ''}`}
+          onClick={() => setTab('system')}
+        >System</button>
+        <button
+          className={`settings-tab${tab === 'items' ? ' active' : ''}`}
+          onClick={() => setTab('items')}
+        >Items</button>
       </div>
 
-      <div className="field-group">
-        <label>Spew Email Address</label>
-        <input type="email" value={settings.spewEmail} onChange={set('spewEmail')} />
-      </div>
+      {tab === 'system' && (
+        <>
+          <div className="field-group">
+            <label>Brand Name (back-print reference)</label>
+            <input value={settings.brandName} onChange={set('brandName')} />
+          </div>
+          <div className="field-group">
+            <label>Spew Email Address</label>
+            <input type="email" value={settings.spewEmail} onChange={set('spewEmail')} />
+          </div>
+          <div className="settings-section-label">Line Item Defaults</div>
+          <div className="field-group">
+            <label>Default Back Design</label>
+            <DesignPicker
+              value={settings.defaultBackDesign}
+              onChange={val => setSettings(s => ({ ...s, defaultBackDesign: val }))}
+            />
+          </div>
+          <div className="field-group">
+            <label>Default Back Notes</label>
+            <textarea
+              value={settings.defaultBackNotes}
+              onChange={set('defaultBackNotes')}
+              placeholder="e.g. Center back, 3 inches below collar"
+            />
+          </div>
+          <button className="btn-primary" onClick={handleSave}>Save Settings</button>
+          <div className="account-section">
+            <p>Connected as: {email || 'Unknown'}</p>
+            <button className="btn-secondary" onClick={handleLogout}>Sign out</button>
+          </div>
+        </>
+      )}
 
-      <div className="settings-section-label">Line Item Defaults</div>
-
-      <div className="field-group">
-        <label>Default Back Design</label>
-        <DesignPicker
-          value={settings.defaultBackDesign}
-          onChange={val => setSettings(s => ({ ...s, defaultBackDesign: val }))}
-        />
-      </div>
-
-      <div className="field-group">
-        <label>Default Back Notes</label>
-        <textarea
-          value={settings.defaultBackNotes}
-          onChange={set('defaultBackNotes')}
-          placeholder="e.g. Center back, 3 inches below collar"
-        />
-      </div>
-
-      <button className="btn-primary" onClick={handleSave}>Save Settings</button>
-
-      <div className="account-section">
-        <p>Connected as: {email || 'Unknown'}</p>
-        <button className="btn-secondary" onClick={handleLogout}>Sign out</button>
-      </div>
+      {tab === 'items' && <ItemsTab />}
 
       <Toast message={toast} onDismiss={() => setToast(null)} />
     </div>

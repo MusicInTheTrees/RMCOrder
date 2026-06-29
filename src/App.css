@@ -822,3 +822,243 @@ textarea:focus {
   font-size: 15px;
   opacity: 0.6;
 }
+
+/* ===== Settings Tabs ===== */
+.settings-tabs {
+  display: flex;
+  gap: 4px;
+  border-bottom: 2px solid var(--border);
+  margin-bottom: 24px;
+}
+.settings-tab {
+  padding: 8px 20px;
+  border: none;
+  background: none;
+  color: var(--text);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -2px;
+}
+.settings-tab.active {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+}
+.settings-tab:hover:not(.active) {
+  color: var(--text-h);
+}
+
+/* ===== Items Tab ===== */
+.items-sync-bar {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+.items-layout {
+  display: grid;
+  grid-template-columns: 220px 1fr;
+  gap: 20px;
+  min-height: 400px;
+}
+.items-list-panel {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+.items-list-row {
+  padding: 10px 14px;
+  cursor: pointer;
+  border-bottom: 1px solid var(--border);
+  font-size: 14px;
+  color: var(--text);
+}
+.items-list-row:last-of-type { border-bottom: none; }
+.items-list-row:hover { background: var(--code-bg); }
+.items-list-row.selected { background: var(--accent-bg); color: var(--accent); font-weight: 600; }
+.items-new-btn {
+  margin: 10px;
+  align-self: flex-start;
+}
+.items-editor-panel {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.items-empty {
+  color: var(--text);
+  opacity: 0.5;
+  font-style: italic;
+}
+
+/* ===== Active/Inactive Two-Column Lists ===== */
+.active-inactive-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.active-inactive-label {
+  font-weight: 600;
+  font-size: 13px;
+  color: var(--text-h);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.active-inactive-cols {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+.active-inactive-col {
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 8px;
+  min-height: 80px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.active-inactive-col-header {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--steel);
+  margin-bottom: 4px;
+}
+.ai-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 6px;
+  border-radius: 4px;
+  font-size: 13px;
+}
+.ai-row:hover { background: var(--code-bg); }
+.ai-row-name { flex: 1; }
+.ai-move-btn {
+  padding: 2px 6px;
+  font-size: 11px;
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  background: none;
+  cursor: pointer;
+  color: var(--text);
+}
+.ai-move-btn:hover { background: var(--accent-bg); border-color: var(--accent); }
+.ai-add-row {
+  margin-top: 4px;
+  display: flex;
+  gap: 4px;
+}
+.ai-add-input {
+  flex: 1;
+  padding: 4px 8px;
+  font-size: 12px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+}
+.ai-add-btn {
+  padding: 4px 10px;
+  font-size: 12px;
+}
+.drag-handle {
+  cursor: grab;
+  color: var(--steel);
+  font-size: 14px;
+  user-select: none;
+}
+
+/* ===== Color Swatches ===== */
+.color-swatch {
+  width: 18px;
+  height: 18px;
+  border-radius: 3px;
+  border: 1px solid var(--border);
+  flex-shrink: 0;
+  cursor: pointer;
+  display: inline-block;
+}
+.color-swatch.no-color { background: #ccc; }
+
+/* ===== Color Picker ===== */
+.color-picker {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 12px;
+  background: white;
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+.color-picker-preview {
+  width: 48px;
+  height: 48px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.color-picker-fields {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+.color-picker-fields label {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  color: var(--text);
+}
+.color-picker-fields input[type="number"] {
+  width: 56px;
+  padding: 3px 6px;
+  font-size: 12px;
+}
+.color-picker-fields input[type="text"] {
+  width: 90px;
+  padding: 3px 6px;
+  font-size: 12px;
+  font-family: monospace;
+}
+.color-picker-clear {
+  font-size: 11px;
+  padding: 4px 8px;
+  color: var(--steel);
+  text-decoration: underline;
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
+/* ===== Scrape Colors button/result ===== */
+.scrape-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+.scrape-result {
+  font-size: 12px;
+  color: var(--steel);
+}
+
+/* ===== Order Notes ===== */
+.order-notes {
+  width: 100%;
+  min-height: 56px;
+  padding: 10px 14px;
+  font-size: 14px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  resize: vertical;
+  margin: 0 24px;
+  width: calc(100% - 48px);
+  box-sizing: border-box;
+  color: var(--text);
+  background: white;
+}
