@@ -1,13 +1,38 @@
 import { useState } from 'react';
 import { useItems } from '../hooks/useItems';
+import ColorPicker from './ColorPicker';
 import Toast from './Toast';
 import ConfirmDialog from './ConfirmDialog';
 
+function ColorColumn({ label, colors, onMove, onSwatchChange, moveLabel, moveSymbol }) {
+  return (
+    <div className="active-inactive-col">
+      <div className="active-inactive-col-header">{label}</div>
+      {colors.map(c => (
+        <div key={c.name} className="ai-row">
+          <span
+            className={`color-swatch${c.hex ? '' : ' no-color'}`}
+            style={c.hex ? { background: c.hex } : {}}
+            onClick={() => onSwatchChange(c.name, c.hex)}
+            title="Edit swatch"
+          />
+          <span className="ai-row-name">{c.name}</span>
+          <button className="ai-move-btn" title={moveLabel} onClick={() => onMove(c.name)}>
+            {moveSymbol}
+          </button>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 export default function ItemsTab() {
-  const { catalog, loading, createItem, updateItem, deleteItem, pushToDrive, pullFromDrive } = useItems();
+  const { catalog, loading, createItem, updateItem, deleteItem, scrapeColors, pushToDrive, pullFromDrive } = useItems();
   const [selectedId, setSelectedId] = useState(null);
   const [toast, setToast] = useState(null);
   const [confirmPull, setConfirmPull] = useState(false);
+  const [expandedColor, setExpandedColor] = useState(null); // { name, hex }
+  const [scrapeResult, setScrapeResult] = useState(null);
 
   const selectedItem = catalog.items.find(i => i.id === selectedId) || null;
 
@@ -49,6 +74,33 @@ export default function ItemsTab() {
   function updateField(field, value) {
     if (!selectedItem) return;
     updateItem({ ...selectedItem, [field]: value });
+  }
+
+  function moveColor(name, makeActive) {
+    if (!selectedItem) return;
+    updateItem({
+      ...selectedItem,
+      colors: selectedItem.colors.map(c => c.name === name ? { ...c, active: makeActive } : c),
+    });
+  }
+
+  function changeColorSwatch(name, hex) {
+    if (!selectedItem) return;
+    updateItem({
+      ...selectedItem,
+      colors: selectedItem.colors.map(c => c.name === name ? { ...c, hex } : c),
+    });
+  }
+
+  async function handleScrapeColors(id) {
+    setScrapeResult('Scraping...');
+    try {
+      const result = await scrapeColors(id);
+      if (result.error) { setScrapeResult(`Error: ${result.error}`); return; }
+      setScrapeResult(`Added ${result.added}, skipped ${result.skipped}`);
+    } catch (err) {
+      setScrapeResult(`Error: ${err.message}`);
+    }
   }
 
   if (loading) return <div className="loading">Loading catalog...</div>;
@@ -94,7 +146,62 @@ export default function ItemsTab() {
                   placeholder="https://supplier.com/product/..."
                 />
               </div>
-              {/* Colors, Sizes, Decoration Methods added in Tasks 8-9 */}
+              {/* Colors section */}
+              <div className="active-inactive-section">
+                <div className="active-inactive-label">Colors</div>
+                <div className="active-inactive-cols">
+                  <ColorColumn
+                    label="Active"
+                    colors={selectedItem.colors.filter(c => c.active)}
+                    onMove={(name) => moveColor(name, false)}
+                    onSwatchChange={(name, hex) => changeColorSwatch(name, hex)}
+                    moveLabel="Move to inactive"
+                    moveSymbol="→"
+                  />
+                  <ColorColumn
+                    label="Inactive"
+                    colors={selectedItem.colors.filter(c => !c.active)}
+                    onMove={(name) => moveColor(name, true)}
+                    onSwatchChange={(name, hex) => changeColorSwatch(name, hex)}
+                    moveLabel="Move to active"
+                    moveSymbol="←"
+                  />
+                </div>
+                <div className="ai-add-row">
+                  <input
+                    className="ai-add-input"
+                    placeholder="Color name..."
+                    id={`add-color-${selectedItem.id}`}
+                  />
+                  <button className="btn-secondary ai-add-btn" onClick={() => {
+                    const inp = document.getElementById(`add-color-${selectedItem.id}`);
+                    const name = inp.value.trim();
+                    if (!name || selectedItem.colors.find(c => c.name.toLowerCase() === name.toLowerCase())) return;
+                    inp.value = '';
+                    updateItem({ ...selectedItem, colors: [...selectedItem.colors, { name, hex: null, active: true }] });
+                  }}>Add</button>
+                </div>
+                {/* Scrape from URL */}
+                <div className="scrape-row">
+                  <button className="btn-secondary" onClick={() => handleScrapeColors(selectedItem.id)}>
+                    Scrape Colors from URL
+                  </button>
+                  {scrapeResult && <span className="scrape-result">{scrapeResult}</span>}
+                </div>
+              </div>
+              {/* Color picker open state managed per-color via expandedColor state */}
+              {expandedColor && (
+                <div className="color-picker-popover">
+                  <ColorPicker
+                    hex={expandedColor.hex}
+                    onChange={(hex) => {
+                      changeColorSwatch(expandedColor.name, hex);
+                      setExpandedColor(prev => ({ ...prev, hex }));
+                    }}
+                  />
+                  <button onClick={() => setExpandedColor(null)}>Done</button>
+                </div>
+              )}
               <button className="btn-danger" onClick={handleDelete}>Delete Item</button>
             </>
           )}
