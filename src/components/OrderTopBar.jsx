@@ -4,7 +4,7 @@ import ConfirmDialog from './ConfirmDialog';
 
 const STATE_ORDER = ['building', 'sent', 'pending', 'paid', 'fulfilled', 'received'];
 
-export default function OrderTopBar({ order, onAdvanceState, onGenerateDraft, saving }) {
+export default function OrderTopBar({ order, onAdvanceState, onGenerateDraft, saving, onNameChange }) {
   const [confirmState, setConfirmState] = useState(false);
   const [confirmDraft, setConfirmDraft] = useState(false);
 
@@ -12,16 +12,28 @@ export default function OrderTopBar({ order, onAdvanceState, onGenerateDraft, sa
 
   return (
     <div className="order-top-bar">
-      <h2>{order?.orderId}</h2>
+      <div className="order-title-group">
+        <input
+          className="order-name-input"
+          value={order?.orderName || ''}
+          onChange={e => onNameChange(e.target.value)}
+          placeholder="Add order name..."
+        />
+        <span className="order-id-label">{order?.orderId}</span>
+      </div>
+
       <StateBadge state={order?.state} />
+
       {nextState && (
         <button onClick={() => setConfirmState(true)}>
           Mark as {nextState}
         </button>
       )}
+
       <button className="btn-primary" onClick={() => setConfirmDraft(true)}>
         Generate Email Draft
       </button>
+
       {saving && <span className="saving-indicator">Saving...</span>}
 
       <ConfirmDialog

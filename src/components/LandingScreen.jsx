@@ -29,7 +29,7 @@ export default function LandingScreen() {
 
   return (
     <div className="landing">
-      <h1>SpewOrderApp</h1>
+      <h1>RMC Ordering</h1>
       {status.authenticated ? (
         <>
           <button className="btn-primary" onClick={handleContinue}>

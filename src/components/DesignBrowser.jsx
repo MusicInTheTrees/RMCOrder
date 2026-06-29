@@ -1,18 +1,30 @@
 import { useDesigns } from '../hooks/useDesigns';
 import Toast from './Toast';
 
-export default function DesignBrowser({ onSelect, selectionMode = false }) {
+export default function DesignBrowser({ onSelect, selectionMode = false, selectionLabel = '', onCancel }) {
   const { designs, loading, toast, clearToast, refresh } = useDesigns();
 
   return (
     <div className="design-browser">
       <div className="design-browser-header">
-        <span>Designs</span>
-        <button onClick={refresh} disabled={loading}>
-          {loading ? 'Refreshing...' : 'Refresh Designs'}
-        </button>
+        {selectionMode ? (
+          <>
+            <span className="selection-label">Select {selectionLabel} design</span>
+            <button onClick={onCancel}>Cancel</button>
+          </>
+        ) : (
+          <>
+            <span>Designs</span>
+            <button onClick={refresh} disabled={loading}>
+              {loading ? 'Refreshing...' : 'Refresh'}
+            </button>
+          </>
+        )}
       </div>
       <div className="design-grid">
+        {designs.length === 0 && (
+          <p className="design-empty">No designs synced yet. Click Refresh to pull from Drive.</p>
+        )}
         {designs.map(d => (
           <div
             key={d.name}

@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useParams, useSearchParams, useNavigate } from 'react-router-dom';
 import { useOrder } from '../hooks/useOrder';
 import { createDraft } from '../api/gmail';
+import { getSettings } from '../api/settings';
 import OrderTopBar from './OrderTopBar';
 import LineItemCard from './LineItemCard';
 import DesignBrowser from './DesignBrowser';
@@ -13,27 +14,37 @@ function nextLineItemNum(lineItems) {
   return String(max + 1).padStart(2, '0');
 }
 
-function nextDesignNum(designs) {
-  const max = designs.reduce((m, d) => Math.max(m, parseInt(d.designNum, 10) || 0), 0);
-  return String(max + 1);
-}
-
 export default function OrderBuilder() {
   const { orderId } = useParams();
   const [searchParams] = useSearchParams();
   const sheetId = searchParams.get('sheetId');
   const navigate = useNavigate();
   const { order, setOrder, saving, offline, syncPending } = useOrder(sheetId);
-  const [selectingDesignFor, setSelectingDesignFor] = useState(null);
+  const [selectingDesign, setSelectingDesign] = useState(null); // { num, placement: 'front'|'back' }
   const [toast, setToast] = useState(null);
+  const settingsRef = useRef({ defaultBackDesign: '', defaultBackNotes: '' });
+
+  useEffect(() => {
+    getSettings().then(s => { settingsRef.current = s; }).catch(() => {});
+  }, []);
 
   if (!order) return <div className="loading">Loading order...</div>;
 
   function addLineItem() {
     const num = nextLineItemNum(order.lineItems);
+    const { defaultBackDesign, defaultBackNotes } = settingsRef.current;
     setOrder(prev => ({
       ...prev,
-      lineItems: [...prev.lineItems, { num, apparelType: '', color: '', sizes: {}, notes: '', designs: [] }],
+      lineItems: [...prev.lineItems, {
+        num,
+        apparelType: '',
+        color: '',
+        sizes: {},
+        frontDesigns: [],
+        frontNotes: '',
+        backDesigns: defaultBackDesign ? [{ designNum: '1', file: defaultBackDesign }] : [],
+        backNotes: defaultBackNotes || '',
+      }],
     }));
   }
 
@@ -52,16 +63,19 @@ export default function OrderBuilder() {
   }
 
   function handleDesignSelected(designName) {
-    if (!selectingDesignFor) return;
+    if (!selectingDesign) return;
+    const { num, placement } = selectingDesign;
+    const field = placement === 'front' ? 'frontDesigns' : 'backDesigns';
     setOrder(prev => ({
       ...prev,
       lineItems: prev.lineItems.map(li => {
-        if (li.num !== selectingDesignFor) return li;
-        const designNum = nextDesignNum(li.designs);
-        return { ...li, designs: [...li.designs, { designNum, file: designName, placement: 'Front' }] };
+        if (li.num !== num) return li;
+        const existing = li[field] || [];
+        const designNum = String(existing.length + 1);
+        return { ...li, [field]: [...existing, { designNum, file: designName }] };
       }),
     }));
-    setSelectingDesignFor(null);
+    setSelectingDesign(null);
   }
 
   async function handleGenerateDraft() {
@@ -87,6 +101,7 @@ export default function OrderBuilder() {
         saving={saving}
         onAdvanceState={handleAdvanceState}
         onGenerateDraft={handleGenerateDraft}
+        onNameChange={name => setOrder(prev => ({ ...prev, orderName: name }))}
       />
 
       <div className="builder-body">
@@ -97,7 +112,7 @@ export default function OrderBuilder() {
               item={item}
               onChange={updated => updateLineItem(item.num, updated)}
               onRemove={() => removeLineItem(item.num)}
-              onAddDesign={() => setSelectingDesignFor(item.num)}
+              onAddDesign={(placement) => setSelectingDesign({ num: item.num, placement })}
             />
           ))}
           <button className="btn-secondary add-line-item" onClick={addLineItem}>
@@ -106,8 +121,10 @@ export default function OrderBuilder() {
         </div>
 
         <DesignBrowser
-          selectionMode={!!selectingDesignFor}
+          selectionMode={!!selectingDesign}
+          selectionLabel={selectingDesign?.placement || ''}
           onSelect={handleDesignSelected}
+          onCancel={() => setSelectingDesign(null)}
         />
       </div>
 

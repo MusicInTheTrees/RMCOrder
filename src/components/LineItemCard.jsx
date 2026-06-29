@@ -12,6 +12,12 @@ export default function LineItemCard({ item, onChange, onRemove, onAddDesign }) 
     onChange({ ...item, [field]: value });
   }
 
+  function removeDesign(placement, idx) {
+    const field = placement === 'front' ? 'frontDesigns' : 'backDesigns';
+    const updated = (item[field] || []).filter((_, i) => i !== idx);
+    update(field, updated);
+  }
+
   return (
     <div className="line-item-card">
       <div className="line-item-header">
@@ -50,42 +56,41 @@ export default function LineItemCard({ item, onChange, onRemove, onAddDesign }) 
         <SizeButtons sizes={item.sizes} onChange={sizes => update('sizes', sizes)} />
       </div>
 
-      <div className="field-group">
-        <label>Designs</label>
-        {(item.designs || []).map((d, i) => (
+      <div className="placement-section">
+        <div className="placement-header">
+          <span className="placement-label">Front</span>
+          <button onClick={() => onAddDesign('front')}>+ Add Design</button>
+        </div>
+        {(item.frontDesigns || []).map((d, i) => (
           <div key={i} className="design-row">
             <span>{d.designNum}. {d.file}</span>
-            <button
-              className={d.placement === 'Front' ? 'active' : ''}
-              onClick={() => {
-                const designs = [...item.designs];
-                designs[i] = { ...d, placement: 'Front' };
-                update('designs', designs);
-              }}
-            >Front</button>
-            <button
-              className={d.placement === 'Back' ? 'active' : ''}
-              onClick={() => {
-                const designs = [...item.designs];
-                designs[i] = { ...d, placement: 'Back' };
-                update('designs', designs);
-              }}
-            >Back</button>
-            <button onClick={() => {
-              const designs = item.designs.filter((_, idx) => idx !== i);
-              update('designs', designs);
-            }}>×</button>
+            <button onClick={() => removeDesign('front', i)}>×</button>
           </div>
         ))}
-        <button onClick={onAddDesign}>+ Add Design</button>
+        <textarea
+          className="placement-notes"
+          value={item.frontNotes || ''}
+          onChange={e => update('frontNotes', e.target.value)}
+          placeholder="Front placement notes..."
+        />
       </div>
 
-      <div className="field-group">
-        <label>Notes</label>
+      <div className="placement-section">
+        <div className="placement-header">
+          <span className="placement-label">Back</span>
+          <button onClick={() => onAddDesign('back')}>+ Add Design</button>
+        </div>
+        {(item.backDesigns || []).map((d, i) => (
+          <div key={i} className="design-row">
+            <span>{d.designNum}. {d.file}</span>
+            <button onClick={() => removeDesign('back', i)}>×</button>
+          </div>
+        ))}
         <textarea
-          value={item.notes || ''}
-          onChange={e => update('notes', e.target.value)}
-          placeholder="Layout instructions, special notes..."
+          className="placement-notes"
+          value={item.backNotes || ''}
+          onChange={e => update('backNotes', e.target.value)}
+          placeholder="Back placement notes..."
         />
       </div>
 

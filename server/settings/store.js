@@ -1,7 +1,12 @@
 const fs = require('fs');
 const config = require('../config');
 
-const DEFAULTS = { brandName: 'Rocky Meowtain Co.', spewEmail: '' };
+const DEFAULTS = {
+  brandName: 'Rocky Meowtain Co.',
+  spewEmail: '',
+  defaultBackDesign: '',
+  defaultBackNotes: '',
+};
 
 function readSettings() {
   if (!fs.existsSync(config.SETTINGS_FILE)) return { ...DEFAULTS };

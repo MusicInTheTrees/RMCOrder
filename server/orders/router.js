@@ -18,7 +18,7 @@ router.get('/', async (_req, res) => {
         if (!match) return null;
         const orderId = f.name;
         const cached = readOrderCache(orderId);
-        return { orderId, folderId: f.id, sheetId: cached ? cached.sheetId : null, state: cached ? cached.state : null, created: cached ? cached.created : null };
+        return { orderId, folderId: f.id, sheetId: cached ? cached.sheetId : null, state: cached ? cached.state : null, created: cached ? cached.created : null, orderName: cached ? (cached.orderName || '') : '' };
       })
       .filter(Boolean);
     res.json(orders);
@@ -39,6 +39,7 @@ router.post('/', async (_req, res) => {
     const today = new Date().toISOString().slice(0, 10);
     const orderData = {
       orderId,
+      orderName: '',
       folderId,
       sheetId,
       state: 'building',

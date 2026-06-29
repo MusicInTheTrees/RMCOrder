@@ -29,3 +29,4 @@ server/settings.json
 server/.env
 server/node_modules/
 .superpowers/
+google_oauth_id.json

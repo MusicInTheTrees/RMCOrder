@@ -4,8 +4,10 @@ export default function ConfirmDialog({ message, onConfirm, onCancel }) {
     <div className="dialog-overlay">
       <div className="dialog">
         <p>{message}</p>
-        <button className="btn-secondary" onClick={onCancel}>Cancel</button>
-        <button className="btn-primary" onClick={onConfirm}>Confirm</button>
+        <div className="dialog-actions">
+          <button className="btn-secondary" onClick={onCancel}>Cancel</button>
+          <button className="btn-primary" onClick={onConfirm}>Confirm</button>
+        </div>
       </div>
     </div>
   );

@@ -31,8 +31,8 @@ router.post('/draft', async (req, res) => {
         // Collect unique design files and their designNum (first occurrence)
         const designNumMap = {};
         for (const li of orderData.lineItems) {
-          for (const d of li.designs || []) {
-            if (d.file !== 'brand_name_text' && !designNumMap[d.file]) {
+          for (const d of [...(li.frontDesigns || []), ...(li.backDesigns || [])]) {
+            if (!designNumMap[d.file]) {
               designNumMap[d.file] = d.designNum;
             }
           }
@@ -51,7 +51,9 @@ router.post('/draft', async (req, res) => {
       }
     }
 
-    const subject = `${orderData.orderId} — Order Request`;
+    const subject = orderData.orderName
+      ? `RMC Order: ${orderData.orderName}`
+      : `${orderData.orderId} — Order Request`;
     const html = buildEmailHtml(orderData, settings);
     const plain = buildEmailPlainText(orderData, settings);
     const draftId = await createDraft(settings.spewEmail, subject, html, plain);
