@@ -1,11 +1,25 @@
+import { useRef, useEffect } from 'react';
 import { useDesigns } from '../hooks/useDesigns';
 import Toast from './Toast';
 
 export default function DesignBrowser({ onSelect, selectionMode = false, selectionLabel = '', onCancel }) {
   const { designs, loading, toast, clearToast, refresh } = useDesigns();
+  const containerRef = useRef(null);
+
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    if (selectionMode) {
+      el.classList.remove('selecting');
+      void el.offsetWidth; // force reflow so animation restarts each time
+      el.classList.add('selecting');
+    } else {
+      el.classList.remove('selecting');
+    }
+  }, [selectionMode]);
 
   return (
-    <div className="design-browser">
+    <div className="design-browser" ref={containerRef}>
       <div className="design-browser-header">
         {selectionMode ? (
           <>

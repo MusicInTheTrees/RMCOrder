@@ -46,5 +46,12 @@ export function useOrder(sheetId) {
     }, 500);
   }, [doSave]);
 
-  return { order, setOrder, saving, offline: !online, syncPending, fromCache };
+  const saveNow = useCallback(() => {
+    clearTimeout(saveTimerRef.current);
+    const data = pendingDataRef.current;
+    if (data) return doSave(data);
+    return Promise.resolve({ skipped: true });
+  }, [doSave]);
+
+  return { order, setOrder, saving, offline: !online, syncPending, fromCache, saveNow };
 }

@@ -26,7 +26,7 @@ export default function LineItemCard({ item, onChange, onRemove, onAddDesign }) 
       </div>
 
       <div className="field-group">
-        <label>Apparel Type</label>
+        <div className="field-section-header">Apparel Type</div>
         <div className="btn-group">
           {APPAREL_TYPES.map(t => (
             <button
@@ -39,7 +39,7 @@ export default function LineItemCard({ item, onChange, onRemove, onAddDesign }) 
       </div>
 
       <div className="field-group">
-        <label>Color</label>
+        <div className="field-section-header">Color</div>
         <div className="btn-group">
           {COLORS.map(c => (
             <button
@@ -52,7 +52,7 @@ export default function LineItemCard({ item, onChange, onRemove, onAddDesign }) 
       </div>
 
       <div className="field-group">
-        <label>Sizes</label>
+        <div className="field-section-header">Sizes</div>
         <SizeButtons sizes={item.sizes} onChange={sizes => update('sizes', sizes)} />
       </div>
 
@@ -63,6 +63,7 @@ export default function LineItemCard({ item, onChange, onRemove, onAddDesign }) 
         </div>
         {(item.frontDesigns || []).map((d, i) => (
           <div key={i} className="design-row">
+            <img className="design-row-thumb" src={`http://localhost:3001/designs-cache/${d.file}`} alt={d.file} />
             <span>{d.designNum}. {d.file}</span>
             <button onClick={() => removeDesign('front', i)}>×</button>
           </div>
@@ -82,6 +83,7 @@ export default function LineItemCard({ item, onChange, onRemove, onAddDesign }) 
         </div>
         {(item.backDesigns || []).map((d, i) => (
           <div key={i} className="design-row">
+            <img className="design-row-thumb" src={`http://localhost:3001/designs-cache/${d.file}`} alt={d.file} />
             <span>{d.designNum}. {d.file}</span>
             <button onClick={() => removeDesign('back', i)}>×</button>
           </div>

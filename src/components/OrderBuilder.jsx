@@ -19,9 +19,10 @@ export default function OrderBuilder() {
   const [searchParams] = useSearchParams();
   const sheetId = searchParams.get('sheetId');
   const navigate = useNavigate();
-  const { order, setOrder, saving, offline, syncPending } = useOrder(sheetId);
+  const { order, setOrder, saving, offline, syncPending, saveNow } = useOrder(sheetId);
   const [selectingDesign, setSelectingDesign] = useState(null); // { num, placement: 'front'|'back' }
   const [toast, setToast] = useState(null);
+  const [saveMsg, setSaveMsg] = useState(null);
   const settingsRef = useRef({ defaultBackDesign: '', defaultBackNotes: '' });
 
   useEffect(() => {
@@ -78,6 +79,12 @@ export default function OrderBuilder() {
     setSelectingDesign(null);
   }
 
+  async function handleSaveNow() {
+    const result = await saveNow();
+    setSaveMsg(result?.skipped ? 'Already up to date' : 'Saved!');
+    setTimeout(() => setSaveMsg(null), 2500);
+  }
+
   async function handleGenerateDraft() {
     try {
       await createDraft(sheetId);
@@ -126,6 +133,13 @@ export default function OrderBuilder() {
           onSelect={handleDesignSelected}
           onCancel={() => setSelectingDesign(null)}
         />
+      </div>
+
+      <div className="save-bar">
+        <button className="btn-primary" onClick={handleSaveNow} disabled={saving}>
+          {saving ? 'Saving...' : 'Save Order'}
+        </button>
+        {saveMsg && <span className="save-confirm">{saveMsg}</span>}
       </div>
 
       <Toast message={toast} onDismiss={() => setToast(null)} />

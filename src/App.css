@@ -347,6 +347,34 @@ button:hover:not(:disabled) {
   gap: 16px;
 }
 
+/* ===== Save Bar ===== */
+.save-bar {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 16px 24px;
+  border-top: 1px solid var(--border);
+}
+
+.save-confirm {
+  color: var(--accent);
+  font-weight: 600;
+  font-size: 14px;
+}
+
+/* ===== Field Section Header (full-width label bar) ===== */
+.field-section-header {
+  width: calc(100% + 40px);
+  margin-left: -20px;
+  padding: 7px 20px;
+  background: var(--code-bg);
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-h);
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+}
+
 /* ===== Line Item Card ===== */
 .line-item-card {
   border: 1px solid var(--border);
@@ -355,6 +383,7 @@ button:hover:not(:disabled) {
   display: flex;
   flex-direction: column;
   gap: 16px;
+  overflow: hidden;
 }
 
 .line-item-header {
@@ -381,6 +410,17 @@ button:hover:not(:disabled) {
 
 .design-row:last-of-type {
   border-bottom: none;
+}
+
+.design-row-thumb {
+  width: 36px;
+  height: 36px;
+  object-fit: contain;
+  border-radius: 4px;
+  border: 1px solid var(--border);
+  background: #fff;
+  flex-shrink: 0;
+  margin-right: 8px;
 }
 
 .design-row span {
@@ -418,50 +458,93 @@ textarea:focus {
 
 /* ===== Size Buttons ===== */
 .size-buttons {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
 }
 
-.size-btn-group {
+.size-row {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 4px;
-  padding: 8px 10px;
+  gap: 5px;
+  padding: 8px 6px;
   border: 1.5px solid var(--border);
   border-radius: 8px;
-  min-width: 64px;
   transition: border-color 0.15s, background 0.15s;
 }
 
-.size-btn-group.active {
+.size-row.active {
   border-color: var(--accent-border);
   background: var(--accent-bg);
 }
 
-.size-btn-group > button {
-  padding: 4px 8px;
-  font-size: 13px;
-  font-weight: 600;
+.size-label {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-h);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
-.size-decrement {
-  padding: 2px 8px;
-  font-size: 14px;
-}
-
-.inv-row {
+.size-total-row {
   display: flex;
   align-items: center;
   gap: 4px;
-  font-size: 12px;
-  color: var(--text);
 }
 
-.inv-row button {
+.size-adj {
   padding: 2px 7px;
+  font-size: 14px;
+  line-height: 1;
+  min-width: 26px;
+}
+
+.size-input {
+  width: 48px;
+  text-align: center;
+  font: inherit;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-h);
+  background: transparent;
+  border: none;
+  border-bottom: 1.5px solid var(--border);
+  border-radius: 0;
+  outline: none;
+  padding: 2px 4px;
+  appearance: textfield;
+  -moz-appearance: textfield;
+}
+
+.size-input::-webkit-outer-spin-button,
+.size-input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.size-input:focus {
+  border-bottom-color: var(--accent);
+}
+
+.size-inv-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.inv-label {
+  font-size: 11px;
+  color: var(--text);
+  opacity: 0.65;
+}
+
+.inv-count {
   font-size: 13px;
+  font-weight: 600;
+  color: var(--text-h);
+  min-width: 16px;
+  text-align: center;
 }
 
 /* ===== Placement Sections (Front / Back) ===== */
@@ -495,12 +578,27 @@ textarea:focus {
 }
 
 /* ===== Design Browser ===== */
+@keyframes blink-alert {
+  0%   { border-color: var(--steel); box-shadow: 0 0 0 3px rgba(88, 120, 160, 0.35); }
+  18%  { border-color: var(--border); box-shadow: none; }
+  36%  { border-color: var(--steel); box-shadow: 0 0 0 3px rgba(88, 120, 160, 0.35); }
+  54%  { border-color: var(--border); box-shadow: none; }
+  72%  { border-color: var(--steel); box-shadow: 0 0 0 3px rgba(88, 120, 160, 0.35); }
+  90%  { border-color: var(--border); box-shadow: none; }
+  100% { border-color: var(--accent); box-shadow: 0 0 0 2px rgba(232, 126, 34, 0.25); }
+}
+
 .design-browser {
-  border: 1px solid var(--border);
+  border: 1.5px solid var(--border);
   border-radius: 10px;
   overflow: hidden;
   position: sticky;
   top: 16px;
+  transition: border-color 0.2s;
+}
+
+.design-browser.selecting {
+  animation: blink-alert 1.4s ease forwards;
 }
 
 .design-browser-header {

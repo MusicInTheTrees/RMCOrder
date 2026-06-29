@@ -5,32 +5,60 @@ export default function SizeButtons({ sizes = {}, onChange }) {
     return sizes[size]?.[key] ?? 0;
   }
 
-  function updateSize(size, key, delta) {
-    const current = getVal(size, key);
-    const next = Math.max(0, current + delta);
-    const total = key === 'total' ? next : getVal(size, 'total');
-    const inventory = key === 'inventory' ? Math.min(next, total) : getVal(size, 'inventory');
-    onChange({ ...sizes, [size]: { total: key === 'total' ? next : total, inventory } });
+  function setTotal(size, rawValue) {
+    const next = Math.max(0, parseInt(rawValue, 10) || 0);
+    const inv = Math.min(getVal(size, 'inventory'), next);
+    onChange({ ...sizes, [size]: { total: next, inventory: inv } });
+  }
+
+  function adjustInv(size, delta) {
+    const total = getVal(size, 'total');
+    const next = Math.max(0, Math.min(total, getVal(size, 'inventory') + delta));
+    onChange({ ...sizes, [size]: { total, inventory: next } });
   }
 
   return (
     <div className="size-buttons">
       {SIZES.map(size => {
         const total = getVal(size, 'total');
-        const inv = getVal(size, 'inventory');
+        const inv   = getVal(size, 'inventory');
         return (
-          <div key={size} className={`size-btn-group ${total > 0 ? 'active' : ''}`}>
-            <button onClick={() => updateSize(size, 'total', 1)}>{size}: {total}</button>
+          <div key={size} className={`size-row${total > 0 ? ' active' : ''}`}>
+            <span className="size-label">{size}</span>
+            <div className="size-total-row">
+              <button
+                className="size-adj"
+                onClick={() => setTotal(size, total - 1)}
+                disabled={total === 0}
+              >−</button>
+              <input
+                className="size-input"
+                type="number"
+                min="0"
+                value={total || ''}
+                placeholder="0"
+                onChange={e => setTotal(size, e.target.value)}
+              />
+              <button
+                className="size-adj"
+                onClick={() => setTotal(size, total + 1)}
+              >+</button>
+            </div>
             {total > 0 && (
-              <>
-                <button className="size-decrement" onClick={() => updateSize(size, 'total', -1)}>−</button>
-                <div className="inv-row">
-                  <span>inv:</span>
-                  <button onClick={() => updateSize(size, 'inventory', -1)} disabled={inv === 0}>−</button>
-                  <span>{inv}</span>
-                  <button onClick={() => updateSize(size, 'inventory', 1)} disabled={inv >= total}>+</button>
-                </div>
-              </>
+              <div className="size-inv-row">
+                <span className="inv-label">inv</span>
+                <button
+                  className="size-adj"
+                  onClick={() => adjustInv(size, -1)}
+                  disabled={inv === 0}
+                >−</button>
+                <span className="inv-count">{inv}</span>
+                <button
+                  className="size-adj"
+                  onClick={() => adjustInv(size, 1)}
+                  disabled={inv >= total}
+                >+</button>
+              </div>
             )}
           </div>
         );
