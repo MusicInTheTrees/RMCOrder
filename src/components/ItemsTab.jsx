@@ -251,11 +251,20 @@ export default function ItemsTab() {
               </div>
               <div className="field-group">
                 <label>Supplier URL</label>
-                <input
-                  value={selectedItem.supplierUrl || ''}
-                  onChange={e => updateField('supplierUrl', e.target.value)}
-                  placeholder="https://supplier.com/product/..."
-                />
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <input
+                    value={selectedItem.supplierUrl || ''}
+                    onChange={e => updateField('supplierUrl', e.target.value)}
+                    placeholder="https://supplier.com/product/..."
+                    style={{ flex: 1 }}
+                  />
+                  <button
+                    className="btn-secondary"
+                    disabled={!selectedItem.supplierUrl}
+                    onClick={() => window.open(selectedItem.supplierUrl, '_blank', 'noopener,noreferrer')}
+                    title="Open in new tab"
+                  >↗</button>
+                </div>
               </div>
               {/* Colors section */}
               <div className="active-inactive-section">
