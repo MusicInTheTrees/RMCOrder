@@ -40,7 +40,7 @@ test('writeOrderToSheet writes compact sizes and methods', async () => {
   await writeOrderToSheet('sheet123', order);
 
   // Find the Line Items writeRange call
-  const liCall = writeRange.mock.calls.find(c => c[1].startsWith('Line Items'));
+  const liCall = writeRange.mock.calls.find(c => c[1].includes('Line Items'));
   const rows = liCall[2];
   expect(rows[0]).toEqual(['#', 'Item Type', 'Color', 'Sizes', 'Front Method', 'Front Notes', 'Back Method', 'Back Notes']);
   expect(rows[1][0]).toBe('01');
@@ -60,7 +60,7 @@ test('readOrderFromSheet reads new format', async () => {
       ['Notes', 'Global note'],
       ['Sheet ID', 'sheet123'],
     ]);
-    if (range.startsWith('Line Items')) return Promise.resolve([
+    if (range.includes('Line Items')) return Promise.resolve([
       ['#', 'Item Type', 'Color', 'Sizes', 'Front Method', 'Front Notes', 'Back Method', 'Back Notes'],
       ['01', 'Unisex Tee', 'White', 'M×5, L×3', 'DTF', 'chest', '', ''],
     ]);
@@ -86,7 +86,7 @@ test('readOrderFromSheet reads legacy format with inventory', async () => {
       ['Notes', ''],
       ['Sheet ID', 'sheet123'],
     ]);
-    if (range.startsWith('Line Items')) return Promise.resolve([
+    if (range.includes('Line Items')) return Promise.resolve([
       ['#', 'Apparel Type', 'Color', 'XS', 'S', 'M', 'L', 'XL', 'XXL', 'Front Notes', 'Back Notes'],
       ['01', 'Youth', 'White', '0', '0', '5', '3', '0', '0', '', ''],
       ['01-inv', '', '', '0', '0', '2', '1', '0', '0', '', ''],

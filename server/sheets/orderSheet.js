@@ -37,7 +37,7 @@ async function writeOrderToSheet(sheetId, orderData) {
     ['Sheet ID',     orderData.sheetId || ''],
   ]);
 
-  await clearRange(sheetId, 'Line Items!A1:Z1000');
+  await clearRange(sheetId, "'Line Items'!A1:Z1000");
   const liHeader = ['#', 'Item Type', 'Color', 'Sizes', 'Front Method', 'Front Notes', 'Back Method', 'Back Notes'];
   const liRows = [liHeader];
   for (const item of orderData.lineItems || []) {
@@ -57,7 +57,7 @@ async function writeOrderToSheet(sheetId, orderData) {
       liRows.push([`${item.num}-inv`, '(from stock)', '', invStr, '', '', '', '']);
     }
   }
-  await writeRange(sheetId, 'Line Items!A1', liRows, 'RAW');
+  await writeRange(sheetId, "'Line Items'!A1", liRows, 'RAW');
 
   await clearRange(sheetId, 'Designs!A1:Z1000');
   const dHeader = ['Line Item #', 'Design #', 'Design File', 'Placement'];
@@ -77,7 +77,7 @@ async function readOrderFromSheet(sheetId) {
   const info    = await readRange(sheetId, 'Sheet1!A1:B10');
   const infoMap = Object.fromEntries(info.map(([k, v]) => [k, v]));
 
-  const allLiRows = await readRange(sheetId, 'Line Items!A1:Z1000');
+  const allLiRows = await readRange(sheetId, "'Line Items'!A1:Z1000");
   const [headerRow, ...liRows] = allLiRows;
   const newFmt = isNewFormat(headerRow);
 
