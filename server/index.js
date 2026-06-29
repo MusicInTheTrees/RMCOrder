@@ -24,6 +24,7 @@ app.use('/sheets', require('./sheets/router'));
 app.use('/orders', require('./orders/router'));
 app.use('/gmail', require('./gmail/router'));
 app.use('/settings', require('./settings/router'));
+app.use('/items', require('./items/router'));
 
 if (require.main === module) {
   app.listen(config.PORT, () => console.log(`Server running on port ${config.PORT}`));

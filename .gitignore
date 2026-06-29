@@ -26,6 +26,7 @@ designs-cache/
 orders-cache/
 server/tokens.json
 server/settings.json
+server/items-catalog.json
 server/.env
 server/node_modules/
 .superpowers/

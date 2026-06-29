@@ -7,6 +7,7 @@ module.exports = {
   ORDERS_CACHE_DIR: path.join(__dirname, '..', 'orders-cache'),
   TOKENS_FILE: path.join(__dirname, 'tokens.json'),
   SETTINGS_FILE: path.join(__dirname, 'settings.json'),
+  ITEMS_CATALOG_FILE: path.join(__dirname, 'items-catalog.json'),
   DRIVE: {
     TOP_LEVEL_FOLDER: '1OYG9ThPfJI0x13080vqW6sIY3c9Us4wk',
     DESIGN_SOURCE: '1CVhEtQZ5hgEB0vM83Y9WfjIo55-ouQ66',
