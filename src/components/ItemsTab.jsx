@@ -259,7 +259,7 @@ export default function ItemsTab() {
                 <label>Inventory Item</label>
                 <input
                   value={selectedItem.inventoryItem || ''}
-                  onChange={e => updateField('inventoryItem', e.target.value)}
+                  onChange={e => updateField('inventoryItem', e.target.value.toLowerCase())}
                   placeholder="e.g. shirt, tote"
                 />
               </div>
@@ -267,8 +267,8 @@ export default function ItemsTab() {
                 <label>Inventory Style</label>
                 <input
                   value={selectedItem.inventoryStyle || ''}
-                  onChange={e => updateField('inventoryStyle', e.target.value)}
-                  placeholder="e.g. Unisex, V-Neck"
+                  onChange={e => updateField('inventoryStyle', e.target.value.toLowerCase())}
+                  placeholder="e.g. unisex, v-neck"
                 />
               </div>
               <div className="field-group">
