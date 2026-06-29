@@ -74,3 +74,30 @@ test('readOrderFromSheet reads new format', async () => {
   expect(order.lineItems[0].frontMethod).toBe('DTF');
   expect(order.notes).toBe('Global note');
 });
+
+test('readOrderFromSheet reads legacy format with inventory', async () => {
+  readRange.mockImplementation((sheetId, range) => {
+    if (range.startsWith('Sheet1')) return Promise.resolve([
+      ['Order ID', 'RMC-001'],
+      ['Order Name', 'Legacy'],
+      ['State', 'building'],
+      ['Created', '2026-06-28'],
+      ['Last Updated', '2026-06-28'],
+      ['Notes', ''],
+      ['Sheet ID', 'sheet123'],
+    ]);
+    if (range.startsWith('Line Items')) return Promise.resolve([
+      ['#', 'Apparel Type', 'Color', 'XS', 'S', 'M', 'L', 'XL', 'XXL', 'Front Notes', 'Back Notes'],
+      ['01', 'Youth', 'White', '0', '0', '5', '3', '0', '0', '', ''],
+      ['01-inv', '', '', '0', '0', '2', '1', '0', '0', '', ''],
+    ]);
+    if (range.startsWith('Designs')) return Promise.resolve([]);
+    return Promise.resolve([]);
+  });
+
+  const order = await readOrderFromSheet('sheet123');
+  expect(order.lineItems[0].apparelType).toBe('Youth');
+  expect(order.lineItems[0].sizes.M.total).toBe(5);
+  expect(order.lineItems[0].sizes.M.inventory).toBe(2);
+  expect(order.lineItems[0].sizes.L.inventory).toBe(1);
+});

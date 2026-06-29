@@ -82,6 +82,7 @@ async function readOrderFromSheet(sheetId) {
   const newFmt = isNewFormat(headerRow);
 
   const lineItemsMap = {};
+  const OLD_SIZE_COLS = ['XS', 'S', 'M', 'L', 'XL', 'XXL'];
   for (const row of liRows) {
     if (!row[0]) continue;
     const num = row[0];
@@ -94,11 +95,17 @@ async function readOrderFromSheet(sheetId) {
             lineItemsMap[baseNum].sizes[label].inventory = v.total;
           }
         }
+      } else if (lineItemsMap[baseNum] && !newFmt) {
+        OLD_SIZE_COLS.forEach((s, i) => {
+          if (lineItemsMap[baseNum].sizes[s]) {
+            lineItemsMap[baseNum].sizes[s].inventory = parseInt(row[3 + i], 10) || 0;
+          }
+        });
       }
       continue;
     }
     if (newFmt) {
-      const [num, itemTypeName, color, sizesStr, frontMethod, frontNotes, backMethod, backNotes] = row;
+      const [, itemTypeName, color, sizesStr, frontMethod, frontNotes, backMethod, backNotes] = row;
       lineItemsMap[num] = {
         num, itemTypeName, color,
         sizes: parseSizes(sizesStr),
@@ -108,8 +115,7 @@ async function readOrderFromSheet(sheetId) {
       };
     } else {
       // Legacy format: #, Apparel Type, Color, XS, S, M, L, XL, XXL, Front Notes, Back Notes
-      const OLD_SIZE_COLS = ['XS', 'S', 'M', 'L', 'XL', 'XXL'];
-      const [num, apparelType, color, ...rest] = row;
+      const [, apparelType, color, ...rest] = row;
       const sizes = {};
       OLD_SIZE_COLS.forEach((s, i) => { sizes[s] = { total: parseInt(rest[i], 10) || 0, inventory: 0 }; });
       lineItemsMap[num] = {
