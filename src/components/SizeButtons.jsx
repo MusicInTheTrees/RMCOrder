@@ -1,6 +1,4 @@
-const SIZES = ['XS', 'S', 'M', 'L', 'XL', 'XXL'];
-
-export default function SizeButtons({ sizes = {}, onChange }) {
+export default function SizeButtons({ sizeLabels = [], sizes = {}, onChange }) {
   function getVal(size, key) {
     return sizes[size]?.[key] ?? 0;
   }
@@ -19,7 +17,7 @@ export default function SizeButtons({ sizes = {}, onChange }) {
 
   return (
     <div className="size-buttons">
-      {SIZES.map(size => {
+      {sizeLabels.map(size => {
         const total = getVal(size, 'total');
         const inv   = getVal(size, 'inventory');
         return (
