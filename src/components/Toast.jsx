@@ -1,12 +1,9 @@
-import { useEffect } from 'react';
-
-export default function Toast({ message, onDismiss, durationMs = 3000 }) {
-  useEffect(() => {
-    if (!message) return;
-    const t = setTimeout(onDismiss, durationMs);
-    return () => clearTimeout(t);
-  }, [message, onDismiss, durationMs]);
-
+export default function Toast({ message, onDismiss }) {
   if (!message) return null;
-  return <div className="toast">{message}</div>;
+  return (
+    <div className="toast">
+      <span className="toast-message">{message}</span>
+      <button className="toast-dismiss" onClick={onDismiss} title="Dismiss">×</button>
+    </div>
+  );
 }

@@ -2,12 +2,15 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getSettings, saveSettings } from '../api/settings';
 import { getAuthStatus, logout } from '../api/auth';
+import { useBugLog } from '../context/BugLogContext';
 import DesignPicker from './DesignPicker';
 import ItemsTab from './ItemsTab';
+import BugLogTab from './BugLogTab';
 import Toast from './Toast';
 
 export default function SettingsScreen() {
   const [tab, setTab] = useState('system');
+  const { logError } = useBugLog();
   const [settings, setSettings] = useState({
     brandName: '',
     spewEmail: '',
@@ -28,7 +31,9 @@ export default function SettingsScreen() {
       await saveSettings(settings);
       setToast('Settings saved');
     } catch (err) {
-      setToast(`Error: ${err.message}`);
+      const msg = `Settings save failed: ${err.message}`;
+      setToast(msg);
+      logError(msg);
     }
   }
 
@@ -55,6 +60,10 @@ export default function SettingsScreen() {
           className={`settings-tab${tab === 'items' ? ' active' : ''}`}
           onClick={() => setTab('items')}
         >Items</button>
+        <button
+          className={`settings-tab${tab === 'bugs' ? ' active' : ''}`}
+          onClick={() => setTab('bugs')}
+        >Bugs</button>
       </div>
 
       {tab === 'system' && (
@@ -92,6 +101,7 @@ export default function SettingsScreen() {
       )}
 
       {tab === 'items' && <ItemsTab />}
+      {tab === 'bugs' && <BugLogTab />}
 
       <Toast message={toast} onDismiss={() => setToast(null)} />
     </div>

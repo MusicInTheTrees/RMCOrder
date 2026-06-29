@@ -4,6 +4,7 @@ import { useOrder } from '../hooks/useOrder';
 import { useItems } from '../hooks/useItems';
 import { createDraft } from '../api/gmail';
 import { getSettings } from '../api/settings';
+import { useBugLog } from '../context/BugLogContext';
 import OrderTopBar from './OrderTopBar';
 import LineItemCard from './LineItemCard';
 import DesignBrowser from './DesignBrowser';
@@ -22,6 +23,7 @@ export default function OrderBuilder() {
   const navigate = useNavigate();
   const { order, setOrder, saving, offline, syncPending, saveNow } = useOrder(sheetId);
   const { catalog } = useItems();
+  const { logError } = useBugLog();
   const [selectingDesign, setSelectingDesign] = useState(null); // { num, placement: 'front'|'back' }
   const [toast, setToast] = useState(null);
   const [saveMsg, setSaveMsg] = useState(null);
@@ -95,7 +97,9 @@ export default function OrderBuilder() {
       await createDraft(sheetId);
       setToast('Gmail draft created successfully!');
     } catch (err) {
-      setToast(`Failed to create draft: ${err.message}`);
+      const msg = `Failed to create draft: ${err.message}`;
+      setToast(msg);
+      logError(msg);
     }
   }
 
@@ -116,12 +120,15 @@ export default function OrderBuilder() {
         onNameChange={name => setOrder(prev => ({ ...prev, orderName: name }))}
       />
 
-      <textarea
-        className="order-notes"
-        value={order.notes || ''}
-        onChange={e => setOrder(prev => ({ ...prev, notes: e.target.value }))}
-        placeholder="Order notes — e.g. All shirts DTG unless noted per placement"
-      />
+      <div className="order-notes-section">
+        <div className="field-section-header">Global Notes</div>
+        <textarea
+          className="order-notes"
+          value={order.notes || ''}
+          onChange={e => setOrder(prev => ({ ...prev, notes: e.target.value }))}
+          placeholder="Order notes — e.g. All shirts DTG unless noted per placement"
+        />
+      </div>
 
       <div className="builder-body">
         <div className="line-items">

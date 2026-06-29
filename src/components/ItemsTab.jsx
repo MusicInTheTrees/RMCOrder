@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { useItems } from '../hooks/useItems';
+import { useBugLog } from '../context/BugLogContext';
 import ColorPicker from './ColorPicker';
 import Toast from './Toast';
 import ConfirmDialog from './ConfirmDialog';
@@ -36,6 +37,7 @@ function ColorColumn({ label, colors, onMove, onSwatchChange, onOpenPicker, move
 
 export default function ItemsTab() {
   const { catalog, loading, createItem, updateItem, deleteItem, scrapeColors, pushToDrive, pullFromDrive } = useItems();
+  const { logError } = useBugLog();
   const [selectedId, setSelectedId] = useState(null);
   const [toast, setToast] = useState(null);
   const [confirmPull, setConfirmPull] = useState(false);
@@ -61,7 +63,8 @@ export default function ItemsTab() {
       const item = await createItem();
       setSelectedId(item.id);
     } catch (err) {
-      setToast(`Failed to create item: ${err.message}`);
+      const msg = `Failed to create item: ${err.message}`;
+      setToast(msg); logError(msg);
     }
   }
 
@@ -71,7 +74,8 @@ export default function ItemsTab() {
       await deleteItem(selectedItem.id);
       setSelectedId(null);
     } catch (err) {
-      setToast(`Failed to delete item: ${err.message}`);
+      const msg = `Failed to delete item: ${err.message}`;
+      setToast(msg); logError(msg);
     }
   }
 
@@ -80,18 +84,20 @@ export default function ItemsTab() {
       await pushToDrive();
       setToast('Pushed to Drive!');
     } catch (err) {
-      setToast(`Push failed: ${err.message}`);
+      const msg = `Push failed: ${err.message}`;
+      setToast(msg); logError(msg);
     }
   }
 
   async function handlePull() {
     try {
       const result = await pullFromDrive();
-      if (result.error) { setToast(`Pull failed: ${result.error}`); return; }
+      if (result.error) { const m = `Pull failed: ${result.error}`; setToast(m); logError(m); return; }
       setToast('Pulled from Drive!');
       setSelectedId(null);
     } catch (err) {
-      setToast(`Pull failed: ${err.message}`);
+      const msg = `Pull failed: ${err.message}`;
+      setToast(msg); logError(msg);
     }
   }
 
