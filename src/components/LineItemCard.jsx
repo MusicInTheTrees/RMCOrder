@@ -112,10 +112,12 @@ export default function LineItemCard({ item, items = [], onChange, onRemove, onA
         {selectedCatalogItem && (
           <div className="field-group">
             <label>Decoration Method</label>
-            <select value={item.frontMethod || ''} onChange={e => update('frontMethod', e.target.value)}>
-              <option value="">— see order notes —</option>
-              {activeMethods.map(m => <option key={m.name} value={m.name}>{m.name}</option>)}
-            </select>
+            <div className="btn-group">
+              <button className={!item.frontMethod ? 'active' : ''} onClick={() => update('frontMethod', '')}>—</button>
+              {activeMethods.map(m => (
+                <button key={m.name} className={item.frontMethod === m.name ? 'active' : ''} onClick={() => update('frontMethod', m.name)}>{m.name}</button>
+              ))}
+            </div>
           </div>
         )}
         {(item.frontDesigns || []).map((d, i) => (
@@ -142,10 +144,12 @@ export default function LineItemCard({ item, items = [], onChange, onRemove, onA
         {selectedCatalogItem && (
           <div className="field-group">
             <label>Decoration Method</label>
-            <select value={item.backMethod || ''} onChange={e => update('backMethod', e.target.value)}>
-              <option value="">— see order notes —</option>
-              {activeMethods.map(m => <option key={m.name} value={m.name}>{m.name}</option>)}
-            </select>
+            <div className="btn-group">
+              <button className={!item.backMethod ? 'active' : ''} onClick={() => update('backMethod', '')}>—</button>
+              {activeMethods.map(m => (
+                <button key={m.name} className={item.backMethod === m.name ? 'active' : ''} onClick={() => update('backMethod', m.name)}>{m.name}</button>
+              ))}
+            </div>
           </div>
         )}
         {(item.backDesigns || []).map((d, i) => (
