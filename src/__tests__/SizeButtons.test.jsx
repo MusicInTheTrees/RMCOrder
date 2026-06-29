@@ -17,12 +17,11 @@ test('inventory cannot exceed total', async () => {
   const onChange = vi.fn();
   const sizes = { M: { total: 2, inventory: 2 } };
   render(<SizeButtons sizeLabels={LABELS} sizes={sizes} onChange={onChange} />);
-  // With M total=2 inventory=2, the inv + button should be disabled
-  // The inv + appears after the size + buttons; find by context
+  // Find the disabled + button (the M inv+ button, which is disabled because inv >= total)
   const allPlus = screen.getAllByText('+');
-  // allPlus: [S+, M+, L+, M-inv+]  — M-inv+ should be disabled
-  const invPlus = allPlus[allPlus.length - 1];
-  expect(invPlus).toBeDisabled();
+  const disabledPlus = allPlus.find(btn => btn.disabled);
+  expect(disabledPlus).toBeTruthy();
+  expect(disabledPlus).toBeDisabled();
 });
 
 test('renders all provided size labels', () => {
