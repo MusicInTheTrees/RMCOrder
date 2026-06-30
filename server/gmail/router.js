@@ -64,7 +64,11 @@ router.post('/draft', async (req, res) => {
     const draftId = await createDraft(settings.spewEmail, subject, html, plain);
     res.json({ draftId });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    const msg = err.message || '';
+    if (msg.includes('gmail.googleapis.com') && msg.includes('disabled')) {
+      return res.status(500).json({ error: 'Gmail API is not enabled for this Google Cloud project. Enable it at console.developers.google.com → APIs & Services → Gmail API, then try again.' });
+    }
+    res.status(500).json({ error: msg });
   }
 });
 
