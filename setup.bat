@@ -1,117 +1,87 @@
 @echo off
 setlocal enabledelayedexpansion
 cls
-title SpewOrderApp - First Time Setup
+title SpewOrderApp - Setup
 
 echo.
 echo  ================================================================
-echo    SpewOrderApp  ^|  First-Time Setup
+echo    SpewOrderApp  -  First-Time Setup
 echo  ================================================================
 echo.
-echo  This will install everything needed to run SpewOrderApp.
 echo  Your computer needs an internet connection.
-echo  Setup takes about 5-10 minutes.
+echo  This takes about 5-10 minutes the first time.
 echo.
-echo  Press any key to begin (or close this window to cancel)...
-pause >nul
 
 REM ================================================================
-REM  STEP 1 of 4 -- Node.js
+REM  STEP 1 / 4   Node.js
 REM ================================================================
-echo.
-echo  [1/4]  Checking for Node.js...
+call :progress 1 "Installing Node.js"
 
 where node >nul 2>&1
 if %ERRORLEVEL% EQU 0 (
-    for /f "tokens=*" %%v in ('node --version 2^>nul') do echo         Already installed: %%v
+    for /f "tokens=*" %%v in ('node --version 2^>nul') do echo   Already installed: %%v
 ) else (
-    echo         Node.js not found. Installing now (this may take 2-3 minutes)...
-    echo.
-    winget install --id OpenJS.NodeJS.LTS -e --source winget ^
-        --accept-source-agreements --accept-package-agreements --silent
+    echo   Node.js not found. Installing via Windows Package Manager...
+    winget install --id OpenJS.NodeJS.LTS -e --source winget --accept-source-agreements --accept-package-agreements
     if !ERRORLEVEL! NEQ 0 (
         echo.
-        echo  !! INSTALL FAILED
-        echo     Could not install Node.js automatically.
-        echo.
-        echo     Please install it manually, then run this setup again:
-        echo     https://nodejs.org/en/download
-        echo.
+        echo   ERROR: Could not install Node.js automatically.
+        echo   Install it manually from https://nodejs.org then run setup again.
         pause
         exit /b 1
     )
-    echo         Node.js installed successfully.
-    REM Add default install location to PATH for this session
     set "PATH=%ProgramFiles%\nodejs;%APPDATA%\npm;!PATH!"
+    echo   Node.js installed.
 )
 
 REM ================================================================
-REM  STEP 2 of 4 -- Git
+REM  STEP 2 / 4   Git
 REM ================================================================
-echo.
-echo  [2/4]  Checking for Git...
+call :progress 2 "Installing Git"
 
 where git >nul 2>&1
 if %ERRORLEVEL% EQU 0 (
-    for /f "tokens=*" %%v in ('git --version 2^>nul') do echo         Already installed: %%v
+    for /f "tokens=*" %%v in ('git --version 2^>nul') do echo   Already installed: %%v
 ) else (
-    echo         Git not found. Installing now (this takes about a minute)...
-    echo.
-    winget install --id Git.Git -e --source winget ^
-        --accept-source-agreements --accept-package-agreements --silent
+    echo   Git not found. Installing via Windows Package Manager...
+    winget install --id Git.Git -e --source winget --accept-source-agreements --accept-package-agreements
     if !ERRORLEVEL! NEQ 0 (
-        echo.
-        echo  !! WARNING: Could not install Git automatically.
-        echo     Git is not required to run the app, but is useful for
-        echo     receiving future updates. You can install it later from:
-        echo     https://git-scm.com
-        echo.
+        echo   WARNING: Could not install Git. You can install it later from https://git-scm.com
     ) else (
-        echo         Git installed successfully.
         set "PATH=%ProgramFiles%\Git\cmd;!PATH!"
+        echo   Git installed.
     )
 )
 
 REM ================================================================
-REM  STEP 3 of 4 -- Install app dependencies
+REM  STEP 3 / 4   Install packages
 REM ================================================================
-echo.
-echo  [3/4]  Installing app packages (first time only -- may take 2-4 minutes)...
-echo.
+call :progress 3 "Installing app packages"
 
-cd /d "%~dp0"
-
-call npm install --prefer-offline 2>&1
-if !ERRORLEVEL! NEQ 0 (
+echo   Frontend packages...
+powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0setup_spinner.ps1" -Dir "%~dp0" -Msg "Frontend"
+if errorlevel 1 (
     echo.
-    echo  !! ERROR: Could not install frontend packages.
-    echo     Check your internet connection and try again.
-    echo.
+    echo   ERROR: Frontend package install failed.
+    echo   Check your internet connection and run setup again.
     pause
     exit /b 1
 )
 
-cd /d "%~dp0server"
-
-call npm install --prefer-offline 2>&1
-if !ERRORLEVEL! NEQ 0 (
+echo   Backend packages...
+powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0setup_spinner.ps1" -Dir "%~dp0server" -Msg "Backend "
+if errorlevel 1 (
     echo.
-    echo  !! ERROR: Could not install backend packages.
-    echo     Check your internet connection and try again.
-    echo.
+    echo   ERROR: Backend package install failed.
+    echo   Check your internet connection and run setup again.
     pause
     exit /b 1
 )
 
-cd /d "%~dp0"
-echo.
-echo         Packages installed.
-
 REM ================================================================
-REM  STEP 4 of 4 -- Google credentials
+REM  STEP 4 / 4   Google credentials
 REM ================================================================
-echo.
-echo  [4/4]  Checking Google credentials...
+call :progress 4 "Configuring Google credentials"
 
 if not exist "%~dp0server\.env" (
     echo GOOGLE_CLIENT_ID=PASTE_YOUR_CLIENT_ID_HERE> "%~dp0server\.env"
@@ -125,37 +95,27 @@ if !ERRORLEVEL! EQU 0 (
     echo    GOOGLE CREDENTIALS NEEDED  (one-time setup)
     echo  ----------------------------------------------------------------
     echo.
-    echo  SpewOrderApp uses Google Sheets, Drive, and Gmail.
-    echo  You need a Google Cloud project with OAuth credentials.
+    echo   SpewOrderApp needs Google Sheets, Drive, and Gmail access.
     echo.
-    echo  INSTRUCTIONS:
+    echo   STEPS:
+    echo    1. A browser window will open to Google Cloud Console.
+    echo       Sign in with the Google account that will own the app.
     echo.
-    echo   1.  A browser window will open to Google Cloud Console.
-    echo       Sign in with the Google account that owns the app.
+    echo    2. Create or select a project (top-left dropdown).
     echo.
-    echo   2.  Create a project (top-left dropdown) or select an existing one.
+    echo    3. Go to:  APIs and Services - Library
+    echo       Enable:  Google Sheets API, Google Drive API, Gmail API
     echo.
-    echo   3.  In the left menu, go to:
-    echo          APIs ^& Services  -^>  Library
-    echo       Enable these three APIs:
-    echo          - Google Sheets API
-    echo          - Google Drive API
-    echo          - Gmail API
-    echo.
-    echo   4.  Go to:  APIs ^& Services  -^>  Credentials
-    echo       Click  "Create Credentials"  -^>  "OAuth 2.0 Client ID"
-    echo       Application type:  Web application
-    echo       Add this Authorized redirect URI (exact):
-    echo          http://localhost:3001/auth/callback
+    echo    4. Go to:  APIs and Services - Credentials
+    echo       Click:   Create Credentials - OAuth 2.0 Client ID
+    echo       Type:    Web application
+    echo       Add redirect URI:  http://localhost:3001/auth/callback
     echo       Click Create.
     echo.
-    echo   5.  A popup shows your Client ID and Client Secret.
-    echo       Copy them. A Notepad window will open -- paste them in.
+    echo    5. Copy your Client ID and Client Secret.
+    echo       A Notepad file will open - paste them in and save.
     echo.
-    echo   6.  Save the Notepad file and close it.
-    echo       Then come back here and press any key.
-    echo.
-    echo  Press any key to open Google Cloud Console...
+    echo   Press any key to open Google Cloud Console...
     pause >nul
 
     start https://console.cloud.google.com/apis/credentials
@@ -163,63 +123,60 @@ if !ERRORLEVEL! EQU 0 (
     notepad "%~dp0server\.env"
 
     echo.
-    echo  After saving your credentials, press any key to continue...
+    echo   After saving your credentials, press any key to continue...
     pause >nul
 ) else (
-    echo         Credentials already configured.
+    echo   Credentials already configured.
 )
 
 REM ================================================================
-REM  Create desktop shortcut
+REM  Desktop shortcut
 REM ================================================================
 echo.
-echo  Creating desktop shortcut...
+echo   Creating desktop shortcut...
 
-set "DESKTOP=%USERPROFILE%\Desktop"
-set "TARGET=%~dp0start.bat"
-REM Remove trailing backslash from workdir
-set "WORKDIR=%~dp0"
-if "!WORKDIR:~-1!"=="\" set "WORKDIR=!WORKDIR:~0,-1!"
+set "_TARGET=%~dp0start.bat"
+set "_WORK=%~dp0"
+if "!_WORK:~-1!"=="\" set "_WORK=!_WORK:~0,-1!"
 
-set "PS_FILE=%TEMP%\speworderapp_shortcut.ps1"
+set "_PS=%TEMP%\spew_shortcut.ps1"
 (
     echo $ws = New-Object -ComObject WScript.Shell
-    echo $s = $ws.CreateShortcut("%DESKTOP%\SpewOrderApp.lnk"^)
-    echo $s.TargetPath = "%TARGET%"
-    echo $s.WorkingDirectory = "%WORKDIR%"
+    echo $s = $ws.CreateShortcut("$env:USERPROFILE\Desktop\SpewOrderApp.lnk"^)
+    echo $s.TargetPath = "%_TARGET%"
+    echo $s.WorkingDirectory = "%_WORK%"
     echo $s.WindowStyle = 1
     echo $s.Description = "Launch SpewOrderApp"
     echo $s.IconLocation = "%SystemRoot%\System32\imageres.dll,14"
     echo $s.Save(^)
-) > "%PS_FILE%"
+) > "%_PS%"
+powershell -NoProfile -ExecutionPolicy Bypass -File "%_PS%" >nul 2>&1
+del "%_PS%" >nul 2>&1
 
-powershell -NoProfile -ExecutionPolicy Bypass -File "%PS_FILE%" >nul 2>&1
-del "%PS_FILE%" >nul 2>&1
-
-if exist "%DESKTOP%\SpewOrderApp.lnk" (
-    echo         Shortcut created on Desktop: "SpewOrderApp"
-) else (
-    echo         Note: Could not create shortcut automatically.
-    echo         You can start the app by double-clicking start.bat in this folder.
-)
+echo   Done. "SpewOrderApp" shortcut is on your Desktop.
 
 REM ================================================================
-REM  Done!
+REM  Launch
 REM ================================================================
 echo.
 echo  ================================================================
-echo    Setup Complete!
+echo    Setup complete! Launching the app now...
 echo  ================================================================
 echo.
-echo  FIRST LOGIN:
-echo    The first time you open the app, click "Login with Google"
-echo    and sign in. This only happens once per computer.
-echo.
-echo  FUTURE UPDATES:
-echo    Use Settings -^> Update App inside the app, or run setup.bat again.
-echo.
-echo  ----------------------------------------------------------------
-echo.
-echo  Starting the app now...
 timeout /t 2 /nobreak >nul
 call "%~dp0start.bat"
+goto :eof
+
+REM ================================================================
+REM  :progress  --  print step header with progress bar
+REM ================================================================
+:progress
+echo.
+echo  ----------------------------------------------------------------
+if "%~1"=="1" echo   [#####               ]  25%%  Step 1/4: %~2
+if "%~1"=="2" echo   [##########          ]  50%%  Step 2/4: %~2
+if "%~1"=="3" echo   [###############     ]  75%%  Step 3/4: %~2
+if "%~1"=="4" echo   [####################] 100%%  Step 4/4: %~2
+echo  ----------------------------------------------------------------
+echo.
+goto :eof
