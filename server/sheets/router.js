@@ -4,6 +4,7 @@ const { readOrderFromSheet, writeOrderToSheet } = require('./orderSheet');
 const { writeOrderCache, readOrderCache } = require('../orders/cache');
 const { readCatalog } = require('../items/store');
 const { findFileByName, uploadFileContent, downloadFileContent, createFolder } = require('../drive/client');
+const { readRange } = require('./client');
 const fs = require('fs');
 const config = require('../config');
 
@@ -12,12 +13,24 @@ router.use(requireAuth);
 
 router.get('/order/:sheetId', async (req, res) => {
   try {
-    const order = await readOrderFromSheet(req.params.sheetId);
+    // Step 1: quick Sheet1 read just for orderId (single API call)
+    let orderId = '';
+    try {
+      const meta = await readRange(req.params.sheetId, 'Sheet1!A1:B10');
+      const infoMap = Object.fromEntries(meta.map(([k, v]) => [k, v]));
+      orderId = infoMap['Order ID'] || '';
+    } catch { /* proceed without orderId */ }
 
-    // Prefer full-fidelity Drive JSON if it exists
-    if (order.orderId) {
+    // Step 2: local cache is the primary source — always complete, always current
+    if (orderId) {
+      const cached = readOrderCache(orderId);
+      if (cached) return res.json({ ...cached, sheetId: req.params.sheetId });
+    }
+
+    // Step 3: Drive JSON fallback (for fresh installs / cache misses)
+    if (orderId) {
       try {
-        const folder = await findFileByName(order.orderId, config.DRIVE.ORDER_FOLDER);
+        const folder = await findFileByName(orderId, config.DRIVE.ORDER_FOLDER);
         if (folder) {
           const jsonFile = await findFileByName('order.json', folder.id);
           if (jsonFile) {
@@ -27,11 +40,12 @@ router.get('/order/:sheetId', async (req, res) => {
           }
         }
       } catch (driveErr) {
-        console.warn('Could not read order.json from Drive, using sheet data:', driveErr.message);
+        console.warn('Could not read order.json from Drive:', driveErr.message);
       }
     }
 
-    // Fall back to sheet-parsed data with catalog name-lookup for itemTypeId
+    // Step 4: full sheet parse (legacy / no cache / no Drive JSON)
+    const order = await readOrderFromSheet(req.params.sheetId);
     const catalog = readCatalog();
     const byName = Object.fromEntries(catalog.items.map(i => [i.name.toLowerCase(), i.id]));
     order.lineItems = order.lineItems.map(li => ({
@@ -40,7 +54,7 @@ router.get('/order/:sheetId', async (req, res) => {
     }));
     res.json(order);
   } catch (err) {
-    // Fall back to local cache — scan for matching sheetId
+    // Step 5: offline cache scan as last resort
     const cacheFiles = fs.existsSync(config.ORDERS_CACHE_DIR)
       ? fs.readdirSync(config.ORDERS_CACHE_DIR) : [];
     for (const file of cacheFiles) {
@@ -56,10 +70,14 @@ router.get('/order/:sheetId', async (req, res) => {
 router.put('/order/:sheetId', async (req, res) => {
   try {
     const orderData = req.body;
-    await writeOrderToSheet(req.params.sheetId, orderData);
+
+    // Local cache first — fastest and most reliable, complete JSON
     writeOrderCache(orderData.orderId, orderData);
 
-    // Best-effort: save full JSON to Drive order folder
+    // Sheet write (human-readable backup, partial fields)
+    await writeOrderToSheet(req.params.sheetId, orderData);
+
+    // Best-effort Drive JSON (cross-machine persistence)
     if (orderData.orderId) {
       try {
         let folder = await findFileByName(orderData.orderId, config.DRIVE.ORDER_FOLDER);

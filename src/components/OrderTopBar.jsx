@@ -20,6 +20,24 @@ export default function OrderTopBar({ order, onAdvanceState, onGenerateDraft, sa
           placeholder="Add order name..."
         />
         <span className="order-id-label">{order?.orderId}</span>
+        <div className="order-links">
+          {order?.folderId && (
+            <a
+              className="order-drive-link"
+              href={`https://drive.google.com/drive/folders/${order.folderId}`}
+              target="_blank"
+              rel="noreferrer"
+            >Drive Folder ↗</a>
+          )}
+          {order?.sheetId && (
+            <a
+              className="order-drive-link"
+              href={`https://docs.google.com/spreadsheets/d/${order.sheetId}`}
+              target="_blank"
+              rel="noreferrer"
+            >Sheet ↗</a>
+          )}
+        </div>
       </div>
 
       <StateBadge state={order?.state} />

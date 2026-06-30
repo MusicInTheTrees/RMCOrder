@@ -75,13 +75,14 @@ async function findFileByName(name, parentId) {
 async function uploadFileContent(name, content, parentId) {
   const drive = getDrive();
   const existing = await findFileByName(name, parentId);
-  const media = { mimeType: 'application/json', body: content };
+  const body = Buffer.from(typeof content === 'string' ? content : JSON.stringify(content), 'utf8');
+  const media = { mimeType: 'application/json', body };
   if (existing) {
-    await drive.files.update({ fileId: existing.id, media });
+    await drive.files.update({ fileId: existing.id, requestBody: {}, media });
     return existing.id;
   }
   const res = await drive.files.create({
-    resource: { name, parents: [parentId] },
+    requestBody: { name, parents: [parentId] },
     media,
     fields: 'id',
   });
