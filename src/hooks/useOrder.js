@@ -19,9 +19,9 @@ export function useOrder(sheetId, { onError } = {}) {
     }).catch(console.error);
   }, [sheetId]);
 
-  const doSave = useCallback((data) => {
+  const doSave = useCallback((data, { full = false } = {}) => {
     setSaving(true);
-    return saveOrderToSheet(sheetId, data)
+    return saveOrderToSheet(sheetId, data, full)
       .then(() => setSyncPending(false))
       .catch((err) => {
         setSyncPending(true);
@@ -38,11 +38,10 @@ export function useOrder(sheetId, { onError } = {}) {
       return next;
     });
 
-    // Schedule debounced save outside the updater
     clearTimeout(saveTimerRef.current);
     saveTimerRef.current = setTimeout(() => {
       if (pendingDataRef.current) {
-        doSave(pendingDataRef.current);
+        doSave(pendingDataRef.current, { full: false });
       }
     }, 500);
   }, [doSave]);
@@ -50,7 +49,7 @@ export function useOrder(sheetId, { onError } = {}) {
   const saveNow = useCallback(() => {
     clearTimeout(saveTimerRef.current);
     const data = pendingDataRef.current;
-    if (data) return doSave(data);
+    if (data) return doSave(data, { full: true });
     return Promise.resolve({ skipped: true });
   }, [doSave]);
 

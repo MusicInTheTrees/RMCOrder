@@ -13,7 +13,7 @@ router.use(requireAuth);
 
 router.get('/order/:sheetId', async (req, res) => {
   try {
-    // Step 1: quick Sheet1 read just for orderId (single API call)
+    // Step 1: quick Sheet1 read just for orderId
     let orderId = '';
     try {
       const meta = await readRange(req.params.sheetId, 'Sheet1!A1:B10');
@@ -21,13 +21,23 @@ router.get('/order/:sheetId', async (req, res) => {
       orderId = infoMap['Order ID'] || '';
     } catch { /* proceed without orderId */ }
 
-    // Step 2: local cache is the primary source — always complete, always current
+    // Step 2a: local cache by orderId — primary, always complete
     if (orderId) {
       const cached = readOrderCache(orderId);
       if (cached) return res.json({ ...cached, sheetId: req.params.sheetId });
     }
 
-    // Step 3: Drive JSON fallback (for fresh installs / cache misses)
+    // Step 2b: local cache scan by sheetId — catches orderId mismatch / empty Sheet1
+    if (fs.existsSync(config.ORDERS_CACHE_DIR)) {
+      for (const file of fs.readdirSync(config.ORDERS_CACHE_DIR)) {
+        const data = readOrderCache(file.replace('.json', ''));
+        if (data && data.sheetId === req.params.sheetId) {
+          return res.json({ ...data, sheetId: req.params.sheetId });
+        }
+      }
+    }
+
+    // Step 3: Drive JSON fallback (cross-machine / no cache)
     if (orderId) {
       try {
         const folder = await findFileByName(orderId, config.DRIVE.ORDER_FOLDER);
@@ -54,13 +64,13 @@ router.get('/order/:sheetId', async (req, res) => {
     }));
     res.json(order);
   } catch (err) {
-    // Step 5: offline cache scan as last resort
-    const cacheFiles = fs.existsSync(config.ORDERS_CACHE_DIR)
-      ? fs.readdirSync(config.ORDERS_CACHE_DIR) : [];
-    for (const file of cacheFiles) {
-      const data = readOrderCache(file.replace('.json', ''));
-      if (data && data.sheetId === req.params.sheetId) {
-        return res.json({ ...data, _fromCache: true });
+    // Step 5: last-resort offline scan
+    if (fs.existsSync(config.ORDERS_CACHE_DIR)) {
+      for (const file of fs.readdirSync(config.ORDERS_CACHE_DIR)) {
+        const data = readOrderCache(file.replace('.json', ''));
+        if (data && data.sheetId === req.params.sheetId) {
+          return res.json({ ...data, _fromCache: true });
+        }
       }
     }
     res.status(500).json({ error: err.message });
@@ -74,24 +84,29 @@ router.put('/order/:sheetId', async (req, res) => {
     // Local cache first — fastest and most reliable, complete JSON
     writeOrderCache(orderData.orderId, orderData);
 
-    // Sheet write (human-readable backup, partial fields)
-    await writeOrderToSheet(req.params.sheetId, orderData);
-
-    // Best-effort Drive JSON (cross-machine persistence)
-    if (orderData.orderId) {
-      try {
-        let folder = await findFileByName(orderData.orderId, config.DRIVE.ORDER_FOLDER);
-        if (!folder) {
-          const id = await createFolder(orderData.orderId, config.DRIVE.ORDER_FOLDER);
-          folder = { id };
-        }
-        await uploadFileContent('order.json', JSON.stringify(orderData), folder.id);
-      } catch (driveErr) {
-        console.warn('Could not save order.json to Drive:', driveErr.message);
-      }
+    // Sheets write only on explicit full-sync (manual Save button) to avoid quota
+    if (req.query.full === '1') {
+      await writeOrderToSheet(req.params.sheetId, orderData);
     }
 
+    // Respond immediately — cache is written, client doesn't need to wait for Drive
     res.json({ ok: true });
+
+    // Fire-and-forget Drive JSON backup (cross-machine persistence)
+    if (orderData.orderId) {
+      (async () => {
+        try {
+          let folder = await findFileByName(orderData.orderId, config.DRIVE.ORDER_FOLDER);
+          if (!folder) {
+            const id = await createFolder(orderData.orderId, config.DRIVE.ORDER_FOLDER);
+            folder = { id };
+          }
+          await uploadFileContent('order.json', JSON.stringify(orderData), folder.id);
+        } catch (driveErr) {
+          console.warn('Could not save order.json to Drive:', driveErr.message);
+        }
+      })();
+    }
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
