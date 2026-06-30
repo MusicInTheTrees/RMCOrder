@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { getOrderBySheet, saveOrderToSheet } from '../api/orders';
 import { useOfflineQueue } from './useOfflineQueue';
 
-export function useOrder(sheetId) {
+export function useOrder(sheetId, { onError } = {}) {
   const [order, setOrderState] = useState(null);
   const [saving, setSaving] = useState(false);
   const [syncPending, setSyncPending] = useState(false);
@@ -23,12 +23,13 @@ export function useOrder(sheetId) {
     setSaving(true);
     return saveOrderToSheet(sheetId, data)
       .then(() => setSyncPending(false))
-      .catch(() => {
+      .catch((err) => {
         setSyncPending(true);
+        onError?.(err.message);
         enqueue(() => saveOrderToSheet(sheetId, data).then(() => setSyncPending(false)));
       })
       .finally(() => setSaving(false));
-  }, [sheetId, enqueue]);
+  }, [sheetId, enqueue, onError]);
 
   const setOrder = useCallback((updater) => {
     setOrderState(prev => {

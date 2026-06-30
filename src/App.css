@@ -81,6 +81,10 @@ button:hover:not(:disabled) {
   border-color: var(--accent);
   color: var(--accent);
 }
+.btn-group-disabled {
+  opacity: 0.38;
+  pointer-events: none;
+}
 
 /* ===== Landing ===== */
 .landing {
@@ -374,6 +378,11 @@ button:hover:not(:disabled) {
   gap: 14px;
   padding: 16px 24px;
   border-top: 1px solid var(--border);
+}
+
+.save-bar-inline {
+  border-top: none;
+  padding: 8px 24px 16px;
 }
 
 .save-confirm {

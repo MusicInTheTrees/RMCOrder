@@ -13,6 +13,8 @@ export default function LineItemCard({ item, items = [], onChange, onRemove, onA
 
   const invItem  = selectedCatalogItem?.inventoryItem || null;
   const invStyle = selectedCatalogItem?.inventoryStyle || '';
+  const frontHasDesigns = (item.frontDesigns || []).length > 0;
+  const backHasDesigns  = (item.backDesigns  || []).length > 0;
 
   // Returns stock count for the current color + given size
   const stockForSize = (invItem && getStock)
@@ -53,7 +55,9 @@ export default function LineItemCard({ item, items = [], onChange, onRemove, onA
 
   function removeDesign(placement, idx) {
     const field = placement === 'front' ? 'frontDesigns' : 'backDesigns';
-    update(field, (item[field] || []).filter((_, i) => i !== idx));
+    const methodField = placement === 'front' ? 'frontMethod' : 'backMethod';
+    const remaining = (item[field] || []).filter((_, i) => i !== idx);
+    onChange({ ...item, [field]: remaining, ...(remaining.length === 0 ? { [methodField]: '' } : {}) });
   }
 
   return (
@@ -136,10 +140,10 @@ export default function LineItemCard({ item, items = [], onChange, onRemove, onA
         {selectedCatalogItem && (
           <div className="field-group">
             <label>Decoration Method</label>
-            <div className="btn-group">
-              <button className={!item.frontMethod ? 'active' : ''} onClick={() => update('frontMethod', '')}>—</button>
+            <div className={`btn-group${!frontHasDesigns ? ' btn-group-disabled' : ''}`}>
+              <button disabled={!frontHasDesigns} className={!item.frontMethod ? 'active' : ''} onClick={() => update('frontMethod', '')}>—</button>
               {activeMethods.map(m => (
-                <button key={m.name} className={item.frontMethod === m.name ? 'active' : ''} onClick={() => update('frontMethod', m.name)}>{m.name}</button>
+                <button key={m.name} disabled={!frontHasDesigns} className={item.frontMethod === m.name ? 'active' : ''} onClick={() => update('frontMethod', m.name)}>{m.name}</button>
               ))}
             </div>
           </div>
@@ -168,10 +172,10 @@ export default function LineItemCard({ item, items = [], onChange, onRemove, onA
         {selectedCatalogItem && (
           <div className="field-group">
             <label>Decoration Method</label>
-            <div className="btn-group">
-              <button className={!item.backMethod ? 'active' : ''} onClick={() => update('backMethod', '')}>—</button>
+            <div className={`btn-group${!backHasDesigns ? ' btn-group-disabled' : ''}`}>
+              <button disabled={!backHasDesigns} className={!item.backMethod ? 'active' : ''} onClick={() => update('backMethod', '')}>—</button>
               {activeMethods.map(m => (
-                <button key={m.name} className={item.backMethod === m.name ? 'active' : ''} onClick={() => update('backMethod', m.name)}>{m.name}</button>
+                <button key={m.name} disabled={!backHasDesigns} className={item.backMethod === m.name ? 'active' : ''} onClick={() => update('backMethod', m.name)}>{m.name}</button>
               ))}
             </div>
           </div>

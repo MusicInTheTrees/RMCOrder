@@ -73,4 +73,45 @@ router.post('/decrement', async (req, res) => {
   }
 });
 
+// Body: [{ item, color, style, size, qty }]
+// Increments matching rows; appends new rows for unmatched entries.
+router.post('/increment', async (req, res) => {
+  const increments = req.body;
+  if (!Array.isArray(increments) || increments.length === 0) return res.json({ ok: true, updated: 0, added: 0 });
+
+  try {
+    const rows = await fetchRows();
+    let updated = 0;
+    let added = 0;
+
+    for (const inc of increments) {
+      const idx = rows.findIndex(r => {
+        const p = parseRow(r);
+        return p.item  === inc.item.toLowerCase().trim() &&
+               p.color === inc.color.toLowerCase().trim() &&
+               p.style === inc.style.toLowerCase().trim() &&
+               p.size  === inc.size.trim();
+      });
+
+      if (idx !== -1) {
+        const current = parseInt(rows[idx][0], 10) || 0;
+        const newVal = current + inc.qty;
+        await writeRange(SHEET_ID, `A${idx + 2}`, [[String(newVal)]], 'RAW');
+        rows[idx] = [String(newVal), ...rows[idx].slice(1)];
+        updated++;
+      } else {
+        const nextRow = rows.length + 2;
+        const newRow = [String(inc.qty), inc.item, inc.color, inc.style, inc.size];
+        await writeRange(SHEET_ID, `A${nextRow}`, [newRow], 'RAW');
+        rows.push(newRow);
+        added++;
+      }
+    }
+
+    res.json({ ok: true, updated, added });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 module.exports = router;

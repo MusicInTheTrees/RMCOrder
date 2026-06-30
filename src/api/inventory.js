@@ -6,3 +6,6 @@ export const getInventoryStyles = () => apiFetch('/inventory/styles');
 
 export const decrementInventory = (items) =>
   apiFetch('/inventory/decrement', { method: 'POST', body: items });
+
+export const incrementInventory = (items) =>
+  apiFetch('/inventory/increment', { method: 'POST', body: items });

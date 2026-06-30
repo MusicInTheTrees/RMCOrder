@@ -4,7 +4,7 @@ import { useOrder } from '../hooks/useOrder';
 import { useItems } from '../hooks/useItems';
 import { createDraft } from '../api/gmail';
 import { getSettings } from '../api/settings';
-import { decrementInventory } from '../api/inventory';
+import { decrementInventory, incrementInventory } from '../api/inventory';
 import { useBugLog } from '../context/BugLogContext';
 import { useInventory } from '../hooks/useInventory';
 import OrderTopBar from './OrderTopBar';
@@ -23,7 +23,13 @@ export default function OrderBuilder() {
   const [searchParams] = useSearchParams();
   const sheetId = searchParams.get('sheetId');
   const navigate = useNavigate();
-  const { order, setOrder, saving, offline, syncPending, saveNow } = useOrder(sheetId);
+  const { order, setOrder, saving, offline, syncPending, saveNow } = useOrder(sheetId, {
+    onError: (msg) => {
+      const err = `Save failed: ${msg}`;
+      setToast(err);
+      logError(err);
+    },
+  });
   const { catalog } = useItems();
   const { logError } = useBugLog();
   const { getStock } = useInventory();
@@ -127,6 +133,31 @@ export default function OrderBuilder() {
         }
       }
     }
+
+    if (nextState === 'received') {
+      const increments = [];
+      for (const li of order.lineItems) {
+        const isBlank = (li.frontDesigns || []).length === 0 && (li.backDesigns || []).length === 0;
+        if (!isBlank) continue;
+        const catalogItem = catalog.items.find(i => i.id === li.itemTypeId);
+        if (!catalogItem?.inventoryItem) continue;
+        const { inventoryItem, inventoryStyle = '' } = catalogItem;
+        for (const [size, v] of Object.entries(li.sizes || {})) {
+          const qty = v?.total ?? 0;
+          if (qty > 0) {
+            increments.push({ item: inventoryItem, color: li.color, style: inventoryStyle, size, qty });
+          }
+        }
+      }
+      if (increments.length > 0) {
+        try {
+          await incrementInventory(increments);
+        } catch (err) {
+          logError(`Failed to update blank inventory: ${err.message}`);
+        }
+      }
+    }
+
     setOrder(prev => ({ ...prev, state: nextState }));
   }
 
@@ -151,6 +182,13 @@ export default function OrderBuilder() {
           onChange={e => setOrder(prev => ({ ...prev, notes: e.target.value }))}
           placeholder="Order notes — e.g. All shirts DTG unless noted per placement"
         />
+      </div>
+
+      <div className="save-bar save-bar-inline">
+        <button className="btn-primary" onClick={handleSaveNow} disabled={saving}>
+          {saving ? 'Saving...' : 'Save Order'}
+        </button>
+        {saveMsg && <span className="save-confirm">{saveMsg}</span>}
       </div>
 
       <div className="builder-body">

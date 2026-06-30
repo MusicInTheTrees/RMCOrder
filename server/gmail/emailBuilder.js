@@ -12,6 +12,10 @@ function formatSizes(sizes) {
     .join(', ');
 }
 
+function isBlank(item) {
+  return (item.frontDesigns || []).length === 0 && (item.backDesigns || []).length === 0;
+}
+
 function groupByCategory(lineItems) {
   const groups = {};
   for (const item of lineItems) {
@@ -23,7 +27,9 @@ function groupByCategory(lineItems) {
 }
 
 function buildEmailHtml(orderData, _settings, catalogByName = {}) {
-  const groups = groupByCategory(orderData.lineItems || []);
+  const allItems = orderData.lineItems || [];
+  const groups = groupByCategory(allItems.filter(i => !isBlank(i)));
+  const blankItems = allItems.filter(isBlank);
   const title = orderData.orderName
     ? `RMC Order: ${orderData.orderName} (${orderData.orderId})`
     : `${orderData.orderId} — Order Request`;
@@ -60,12 +66,29 @@ function buildEmailHtml(orderData, _settings, catalogByName = {}) {
     html += '</table>';
   }
 
+  if (blankItems.length > 0) {
+    html += `<h3>Blank Items (no decoration)</h3>`;
+    html += '<table border="1" cellpadding="6" cellspacing="0">';
+    html += '<tr><th>#</th><th>Item Type</th><th>Color</th><th>Sizes</th></tr>';
+    for (const item of blankItems) {
+      html += `<tr>
+        <td>${item.num}</td>
+        <td>${item.itemTypeName || item.apparelType || '—'}</td>
+        <td>${item.color || '—'}</td>
+        <td>${formatSizes(item.sizes)}</td>
+      </tr>`;
+    }
+    html += '</table>';
+  }
+
   html += `<p>📁 Design files: see order folder in Google Drive (Order ID: ${orderData.orderId})</p>`;
   return html;
 }
 
 function buildEmailPlainText(orderData, _settings, catalogByName = {}) {
-  const groups = groupByCategory(orderData.lineItems || []);
+  const allItems = orderData.lineItems || [];
+  const groups = groupByCategory(allItems.filter(i => !isBlank(i)));
+  const blankItems = allItems.filter(isBlank);
   const title = orderData.orderName
     ? `RMC Order: ${orderData.orderName} (${orderData.orderId})`
     : `${orderData.orderId} — Order Request`;
@@ -90,6 +113,14 @@ function buildEmailPlainText(orderData, _settings, catalogByName = {}) {
     }
     text += '\n';
   }
+  if (blankItems.length > 0) {
+    text += `Blank Items (no decoration)\n${'—'.repeat(26)}\n`;
+    for (const item of blankItems) {
+      text += `• #${item.num} | ${item.itemTypeName || item.apparelType || ''} | ${item.color || ''} | ${formatSizes(item.sizes)}\n`;
+    }
+    text += '\n';
+  }
+
   text += `Design files: Order folder in Google Drive (${orderData.orderId})\n`;
   return text;
 }
