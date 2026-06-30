@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getSettings, saveSettings, updateApp } from '../api/settings';
-import { getAuthStatus, logout } from '../api/auth';
+import { getAuthStatus } from '../api/auth';
 import { useBugLog } from '../context/BugLogContext';
 import DesignPicker from './DesignPicker';
 import ItemsTab from './ItemsTab';
@@ -37,11 +37,6 @@ export default function SettingsScreen() {
       setToast(msg);
       logError(msg);
     }
-  }
-
-  async function handleLogout() {
-    await logout();
-    navigate('/');
   }
 
   async function handleUpdate() {
@@ -110,7 +105,7 @@ export default function SettingsScreen() {
           <button className="btn-primary" onClick={handleSave}>Save Settings</button>
           <div className="account-section">
             <p>Connected as: {email || 'Unknown'}</p>
-            <button className="btn-secondary" onClick={handleLogout}>Sign out</button>
+            <button className="btn-secondary" onClick={() => navigate('/')}>Landing Page</button>
           </div>
 
           <div className="settings-section-label">App Updates</div>
