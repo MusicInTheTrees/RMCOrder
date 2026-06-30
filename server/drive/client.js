@@ -1,5 +1,6 @@
 const { google } = require('googleapis');
 const fs = require('fs');
+const { Readable } = require('stream');
 const { getOAuth2Client } = require('../auth/oauth');
 
 function getDrive() {
@@ -75,8 +76,8 @@ async function findFileByName(name, parentId) {
 async function uploadFileContent(name, content, parentId) {
   const drive = getDrive();
   const existing = await findFileByName(name, parentId);
-  const body = Buffer.from(typeof content === 'string' ? content : JSON.stringify(content), 'utf8');
-  const media = { mimeType: 'application/json', body };
+  const buf = Buffer.from(typeof content === 'string' ? content : JSON.stringify(content), 'utf8');
+  const media = { mimeType: 'application/json', body: Readable.from(buf) };
   if (existing) {
     await drive.files.update({ fileId: existing.id, requestBody: {}, media });
     return existing.id;
