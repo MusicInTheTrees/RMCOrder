@@ -211,25 +211,15 @@ echo  ================================================================
 echo    Setup Complete!
 echo  ================================================================
 echo.
-echo  TO START THE APP:
-echo    Double-click "SpewOrderApp" on your Desktop.
-echo.
 echo  FIRST LOGIN:
 echo    The first time you open the app, click "Login with Google"
 echo    and sign in. This only happens once per computer.
 echo.
 echo  FUTURE UPDATES:
-echo    If you have Git installed, open a terminal in this folder
-echo    and run:  git pull
-echo    Then run setup.bat again to update packages.
+echo    Use Settings -^> Update App inside the app, or run setup.bat again.
 echo.
 echo  ----------------------------------------------------------------
 echo.
-set /p "LAUNCH=Start the app now? (Y/N): "
-if /i "!LAUNCH!"=="Y" (
-    call "%~dp0start.bat"
-) else (
-    echo.
-    echo  All done! Use the Desktop shortcut whenever you're ready.
-    pause
-)
+echo  Starting the app now...
+timeout /t 2 /nobreak >nul
+call "%~dp0start.bat"
