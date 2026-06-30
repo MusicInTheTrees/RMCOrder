@@ -58,8 +58,12 @@ REM  STEP 3 / 4   Install packages
 REM ================================================================
 call :progress 3 "Installing app packages"
 
+REM Strip trailing backslash from %~dp0 ? PowerShell chokes on path ending in \"
+set "_BASE=%~dp0"
+if "!_BASE:~-1!"=="\" set "_BASE=!_BASE:~0,-1!"
+
 echo   Frontend packages...
-powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0setup_spinner.ps1" -Dir "%~dp0" -Msg "Frontend"
+powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0setup_spinner.ps1" -Dir "!_BASE!" -Msg "Frontend"
 if errorlevel 1 (
     echo.
     echo   ERROR: Frontend package install failed.
@@ -69,7 +73,7 @@ if errorlevel 1 (
 )
 
 echo   Backend packages...
-powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0setup_spinner.ps1" -Dir "%~dp0server" -Msg "Backend "
+powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0setup_spinner.ps1" -Dir "!_BASE!\server" -Msg "Backend "
 if errorlevel 1 (
     echo.
     echo   ERROR: Backend package install failed.
