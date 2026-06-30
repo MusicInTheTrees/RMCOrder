@@ -1,0 +1,2 @@
+# Always checkout .bat files with Windows CRLF line endings
+*.bat text eol=crlf
