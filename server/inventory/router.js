@@ -33,6 +33,16 @@ router.get('/', async (_req, res) => {
   }
 });
 
+router.get('/styles', async (_req, res) => {
+  try {
+    const rows = await fetchRows();
+    const styles = [...new Set(rows.map(r => parseRow(r).style))].filter(Boolean).sort();
+    res.json(styles);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // Body: [{ item, color, style, size, qty }]
 router.post('/decrement', async (req, res) => {
   const decrements = req.body;

@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { useItems } from '../hooks/useItems';
 import { useBugLog } from '../context/BugLogContext';
+import { getInventoryStyles } from '../api/inventory';
 import ColorPicker from './ColorPicker';
 import Toast from './Toast';
 import ConfirmDialog from './ConfirmDialog';
@@ -39,6 +40,7 @@ export default function ItemsTab() {
   const { catalog, loading, createItem, updateItem, deleteItem, scrapeColors, pushToDrive, pullFromDrive } = useItems();
   const { logError } = useBugLog();
   const [selectedId, setSelectedId] = useState(null);
+  const [styleOptions, setStyleOptions] = useState([]);
   const [toast, setToast] = useState(null);
   const [confirmPull, setConfirmPull] = useState(false);
   const [expandedColor, setExpandedColor] = useState(null); // { name, hex }
@@ -49,6 +51,10 @@ export default function ItemsTab() {
   const [newColorName, setNewColorName] = useState('');
   const [newSizeLabel, setNewSizeLabel] = useState('');
   const [newMethodName, setNewMethodName] = useState('');
+
+  useEffect(() => {
+    getInventoryStyles().then(setStyleOptions).catch(() => {});
+  }, []);
 
   useEffect(() => {
     setNewColorName('');
@@ -268,8 +274,14 @@ export default function ItemsTab() {
                 <input
                   value={selectedItem.inventoryStyle || ''}
                   onChange={e => updateField('inventoryStyle', e.target.value.toLowerCase())}
-                  placeholder="e.g. unisex, v-neck"
+                  placeholder="e.g. unisex, womens v-neck"
+                  list="inventory-style-options"
                 />
+                {styleOptions.length > 0 && (
+                  <datalist id="inventory-style-options">
+                    {styleOptions.map(s => <option key={s} value={s} />)}
+                  </datalist>
+                )}
               </div>
               <div className="field-group">
                 <label>Supplier URL</label>
