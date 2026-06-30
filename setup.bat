@@ -87,12 +87,17 @@ REM  STEP 4 / 4   Google credentials
 REM ================================================================
 call :progress 4 "Configuring Google credentials"
 
-if not exist "%~dp0server\.env" (
-    echo GOOGLE_CLIENT_ID=PASTE_YOUR_CLIENT_ID_HERE> "%~dp0server\.env"
-    echo GOOGLE_CLIENT_SECRET=PASTE_YOUR_CLIENT_SECRET_HERE>> "%~dp0server\.env"
+set "_CREDS_DIR=%APPDATA%\SpewOrderApp"
+set "_CREDS=%APPDATA%\SpewOrderApp\speworderapp-credentials.env"
+
+if not exist "%_CREDS_DIR%" mkdir "%_CREDS_DIR%"
+
+if not exist "%_CREDS%" (
+    echo GOOGLE_CLIENT_ID=PASTE_YOUR_CLIENT_ID_HERE> "%_CREDS%"
+    echo GOOGLE_CLIENT_SECRET=PASTE_YOUR_CLIENT_SECRET_HERE>> "%_CREDS%"
 )
 
-findstr /C:"PASTE_YOUR_CLIENT_ID_HERE" "%~dp0server\.env" >nul 2>&1
+findstr /C:"PASTE_YOUR_CLIENT_ID_HERE" "%_CREDS%" >nul 2>&1
 if !ERRORLEVEL! EQU 0 (
     echo.
     echo  ----------------------------------------------------------------
@@ -119,18 +124,23 @@ if !ERRORLEVEL! EQU 0 (
     echo    5. Copy your Client ID and Client Secret.
     echo       A Notepad file will open - paste them in and save.
     echo.
+    echo   Credentials saved at:
+    echo     %_CREDS%
+    echo   (outside the app folder - safe to copy to your business partner)
+    echo.
     echo   Press any key to open Google Cloud Console...
     pause >nul
 
     start https://console.cloud.google.com/apis/credentials
     timeout /t 2 /nobreak >nul
-    notepad "%~dp0server\.env"
+    notepad "%_CREDS%"
 
     echo.
     echo   After saving your credentials, press any key to continue...
     pause >nul
 ) else (
     echo   Credentials already configured.
+    echo   Location: %_CREDS%
 )
 
 REM ================================================================
