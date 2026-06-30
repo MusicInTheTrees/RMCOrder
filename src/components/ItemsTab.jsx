@@ -6,7 +6,7 @@ import ColorPicker from './ColorPicker';
 import Toast from './Toast';
 import ConfirmDialog from './ConfirmDialog';
 
-function ColorColumn({ label, colors, onMove, onSwatchChange, onOpenPicker, moveLabel, moveSymbol, onDragStart, onDrop }) {
+function ColorColumn({ label, colors, onMove, onSwatchChange, onOpenPicker, moveLabel, moveSymbol, onDragStart, onDrop, onDelete }) {
   return (
     <div className="active-inactive-col">
       <div className="active-inactive-col-header">{label}</div>
@@ -30,6 +30,7 @@ function ColorColumn({ label, colors, onMove, onSwatchChange, onOpenPicker, move
           <button className="ai-move-btn" title={moveLabel} onClick={() => onMove(c.name)}>
             {moveSymbol}
           </button>
+          <button className="ai-delete-btn" title="Delete color" onClick={() => onDelete(c.name)}>×</button>
         </div>
       ))}
     </div>
@@ -205,6 +206,21 @@ export default function ItemsTab() {
     updateItem({ ...selectedItem, decorationMethods: [...selectedItem.decorationMethods, { name, active: true }] });
   }
 
+  function deleteColor(name) {
+    if (!selectedItem) return;
+    updateItem({ ...selectedItem, colors: selectedItem.colors.filter(c => c.name !== name) });
+  }
+
+  function deleteSize(label) {
+    if (!selectedItem) return;
+    updateItem({ ...selectedItem, sizes: selectedItem.sizes.filter(s => s.label !== label) });
+  }
+
+  function deleteMethod(name) {
+    if (!selectedItem) return;
+    updateItem({ ...selectedItem, decorationMethods: selectedItem.decorationMethods.filter(m => m.name !== name) });
+  }
+
   function moveMethod(name, makeActive) {
     if (!selectedItem) return;
     updateItem({
@@ -314,6 +330,7 @@ export default function ItemsTab() {
                     moveSymbol="→"
                     onDragStart={(idx) => { dragColorIdx.current = idx; }}
                     onDrop={(idx) => reorderColor(idx)}
+                    onDelete={deleteColor}
                   />
                   <ColorColumn
                     label="Inactive"
@@ -323,6 +340,7 @@ export default function ItemsTab() {
                     onOpenPicker={(name, hex) => setExpandedColor({ name, hex })}
                     moveLabel="Move to active"
                     moveSymbol="←"
+                    onDelete={deleteColor}
                   />
                 </div>
                 <div className="ai-add-row">
@@ -374,6 +392,7 @@ export default function ItemsTab() {
                         <span className="drag-handle">⠿</span>
                         <span className="ai-row-name">{s.label}</span>
                         <button className="ai-move-btn" title="Move size to inactive" onClick={() => moveSize(s.label, false)}>→</button>
+                        <button className="ai-delete-btn" title="Delete size" onClick={() => deleteSize(s.label)}>×</button>
                       </div>
                     ))}
                     <div className="ai-add-row">
@@ -393,6 +412,7 @@ export default function ItemsTab() {
                       <div key={s.label} className="ai-row">
                         <span className="ai-row-name">{s.label}</span>
                         <button className="ai-move-btn" title="Move size to active" onClick={() => moveSize(s.label, true)}>←</button>
+                        <button className="ai-delete-btn" title="Delete size" onClick={() => deleteSize(s.label)}>×</button>
                       </div>
                     ))}
                   </div>
@@ -417,6 +437,7 @@ export default function ItemsTab() {
                         <span className="drag-handle">⠿</span>
                         <span className="ai-row-name">{m.name}</span>
                         <button className="ai-move-btn" title="Move to inactive" onClick={() => moveMethod(m.name, false)}>→</button>
+                        <button className="ai-delete-btn" title="Delete method" onClick={() => deleteMethod(m.name)}>×</button>
                       </div>
                     ))}
                     <div className="ai-add-row">
@@ -436,6 +457,7 @@ export default function ItemsTab() {
                       <div key={m.name} className="ai-row">
                         <span className="ai-row-name">{m.name}</span>
                         <button className="ai-move-btn" title="Move to active" onClick={() => moveMethod(m.name, true)}>←</button>
+                        <button className="ai-delete-btn" title="Delete method" onClick={() => deleteMethod(m.name)}>×</button>
                       </div>
                     ))}
                   </div>
