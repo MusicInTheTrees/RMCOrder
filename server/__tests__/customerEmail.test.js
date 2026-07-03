@@ -83,6 +83,7 @@ test('preview returns rendered html using the generic name and order name', asyn
   expect(res.status).toBe(200);
   expect(res.body.html).toContain('Fellow Cat Lover');
   expect(res.body.html).toContain('Summer Drop');
+  expect(res.body.html).toContain('/api/assets/email_header.jpg'); // browser-loadable header, not cid
 });
 
 test('draft creates one Gmail draft per customer', async () => {

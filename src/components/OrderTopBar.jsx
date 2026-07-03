@@ -4,11 +4,13 @@ import ConfirmDialog from './ConfirmDialog';
 
 const STATE_ORDER = ['building', 'sent', 'pending', 'paid', 'fulfilled', 'received', 'shipped'];
 
-export default function OrderTopBar({ order, onAdvanceState, onGenerateDraft, saving, onNameChange }) {
+export default function OrderTopBar({ order, onAdvanceState, onRegressState, onGenerateDraft, saving, onNameChange }) {
   const [confirmState, setConfirmState] = useState(false);
+  const [confirmRegress, setConfirmRegress] = useState(false);
   const [confirmDraft, setConfirmDraft] = useState(false);
 
   const nextState = STATE_ORDER[STATE_ORDER.indexOf(order?.state) + 1];
+  const prevState = STATE_ORDER[STATE_ORDER.indexOf(order?.state) - 1];
 
   return (
     <div className="order-top-bar">
@@ -47,6 +49,11 @@ export default function OrderTopBar({ order, onAdvanceState, onGenerateDraft, sa
       {saving && <span className="saving-indicator">Saving...</span>}
 
       <div className="order-state-controls">
+        {prevState && (
+          <button className="move-to-btn move-back-btn" onClick={() => setConfirmRegress(true)}>
+            ← Move back
+          </button>
+        )}
         <div className="order-state-current">
           <span className="order-state-label">Current State</span>
           <StateBadge state={order?.state} />
@@ -68,6 +75,11 @@ export default function OrderTopBar({ order, onAdvanceState, onGenerateDraft, sa
         message={confirmState ? `Move order to "${nextState}"?` : null}
         onConfirm={() => { setConfirmState(false); onAdvanceState(nextState); }}
         onCancel={() => setConfirmState(false)}
+      />
+      <ConfirmDialog
+        message={confirmRegress ? `Move order back to "${prevState}"?` : null}
+        onConfirm={() => { setConfirmRegress(false); onRegressState(prevState); }}
+        onCancel={() => setConfirmRegress(false)}
       />
       <ConfirmDialog
         message={confirmDraft ? 'Create Gmail draft for this order?' : null}

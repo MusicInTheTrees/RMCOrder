@@ -6,7 +6,7 @@ const { readSettings } = require('../settings/store');
 const { readCatalog } = require('../items/store');
 const { buildEmailHtml, buildEmailPlainText } = require('./emailBuilder');
 const { upsertDraft, sendEmail, createDraft } = require('./client');
-const { buildCustomerEmail, logoAttachment } = require('./customerEmailBuilder');
+const { buildCustomerEmail, headerImage } = require('./customerEmailBuilder');
 const { readStatusEmails, writeStatusEmails } = require('./statusEmailStore');
 const { listFiles, findFileByName, findFolderByName, copyFile, shareFileWithUser, uploadFileContent } = require('../drive/client');
 const { readRange } = require('../sheets/client');
@@ -144,6 +144,7 @@ router.post('/customer-email/preview', async (req, res) => {
     const { subject, html } = buildCustomerEmail({
       state, template: templates[state], customerName: '',
       genericName: genericCustomerName, orderName: order.orderName,
+      imageSrc: '/api/assets/email_header.jpg', // browser-loadable for the on-screen preview
     });
     res.json({ subject, html });
   } catch (err) {
@@ -161,7 +162,7 @@ router.post('/customer-email/draft', async (req, res) => {
     const customers = order.customers || [];
     if (customers.length === 0) return res.status(400).json({ error: 'No customers on this order' });
     const { templates, genericCustomerName } = readStatusEmails();
-    const attachment = logoAttachment();
+    const attachment = headerImage();
     let drafted = 0;
     for (const c of customers) {
       const { subject, html, plain } = buildCustomerEmail({
@@ -186,7 +187,7 @@ router.post('/customer-email/send', async (req, res) => {
   try {
     const order = await loadOrder(sheetId);
     const { templates, genericCustomerName } = readStatusEmails();
-    const attachment = logoAttachment();
+    const attachment = headerImage();
     const at = new Date().toISOString();
     const emails = [];
 

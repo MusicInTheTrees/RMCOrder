@@ -281,6 +281,11 @@ export default function OrderBuilder() {
     }
   }
 
+  // Moving backward is a manual correction — no inventory changes, no emails.
+  function handleRegressState(prevState) {
+    setOrder(prev => ({ ...prev, state: prevState }));
+  }
+
   return (
     <div className="order-builder">
       <OfflineBanner offline={offline} syncPending={syncPending} />
@@ -290,6 +295,7 @@ export default function OrderBuilder() {
         order={order}
         saving={saving}
         onAdvanceState={handleAdvanceState}
+        onRegressState={handleRegressState}
         onGenerateDraft={handleGenerateDraft}
         onNameChange={name => setOrder(prev => ({ ...prev, orderName: name }))}
       />

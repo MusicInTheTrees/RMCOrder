@@ -24,3 +24,20 @@ test('buildRawRelated adds a related image part with Content-ID', () => {
   expect(raw).toContain(Buffer.from('PNGDATA').toString('base64'));
   expect(raw).toMatch(/\r\n/);
 });
+
+test('buildRawRelated honors an image content type (e.g. jpeg)', () => {
+  const img = { cid: 'rmcheader', filename: 'email_header.jpg', content: Buffer.from('JPGDATA'), type: 'image/jpeg' };
+  const raw = decode(buildRawRelated('a@x.com', 'S', '<img>', 'p', [img]));
+  expect(raw).toContain('Content-Type: image/jpeg; name="email_header.jpg"');
+});
+
+test('buildRawRelated RFC2047-encodes a non-ASCII subject', () => {
+  const raw = decode(buildRawRelated('a@x.com', 'Café — déjà', '<p>h</p>', 'h', []));
+  expect(raw).toContain('Subject: =?UTF-8?B?');
+  expect(raw).not.toContain('Subject: Café');
+});
+
+test('buildRawRelated leaves a plain ASCII subject unencoded', () => {
+  const raw = decode(buildRawRelated('a@x.com', 'Your RMC order is on its way!', '<p>h</p>', 'h', []));
+  expect(raw).toContain('Subject: Your RMC order is on its way!');
+});

@@ -162,8 +162,10 @@ export default function CustomersPanel({ customers = [], onChange, sheetId, orde
         {draftMsg && <span className="draft-msg">{draftMsg}</span>}
 
         <label className="auto-send-toggle">
-          <input type="checkbox" checked={autoSend} onChange={onAutoSendChange} />
-          {' '}Automatically Send Status Emails?
+          <span className="auto-send-row">
+            <input type="checkbox" checked={autoSend} onChange={onAutoSendChange} />
+            Automatically Send Status Emails?
+          </span>
           <span className="auto-send-note">Sends automatically on: {statusList}</span>
         </label>
       </div>

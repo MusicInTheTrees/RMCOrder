@@ -1373,12 +1373,14 @@ textarea:focus {
   margin-bottom: 8px;
 }
 .customers-empty, .customers-hint { color: #666; font-size: 0.9em; }
-.customers-preview { margin-top: 20px; }
+.customers-preview { margin: 20px auto 0; max-width: 540px; text-align: center; }
 .preview-subject { font-size: 0.9em; color: #333; margin: 6px 0; }
 .email-preview-frame {
+  display: block;
+  margin: 0 auto;
   width: 100%;
-  max-width: 540px;
-  height: 520px;
+  max-width: 520px;
+  height: 500px;
   border: 1px solid #ccc;
   border-radius: 8px;
   background: #fff;
@@ -1386,13 +1388,15 @@ textarea:focus {
 .customers-send-controls {
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
-  gap: 28px; /* clear space between the draft button and the auto-send checkbox */
+  align-items: center;          /* centered on the page */
+  gap: 56px;                    /* twice the previous spacing between button and checkbox */
   margin-top: 24px;
+  text-align: center;
 }
 .draft-msg { color: #333; font-size: 0.9em; }
-.auto-send-toggle { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; font-weight: 600; }
-.auto-send-note { display: block; width: 100%; margin-left: 22px; color: #666; font-size: 0.8em; font-weight: 400; }
+.auto-send-toggle { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 4px; }
+.auto-send-row { display: flex; align-items: center; gap: 6px; font-weight: 600; }
+.auto-send-note { color: #666; font-size: 0.8em; font-weight: 400; }
 
 /* Status Emails settings tab */
 .status-emails-hint { color: #555; font-size: 0.9em; }

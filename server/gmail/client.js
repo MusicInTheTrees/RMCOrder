@@ -2,11 +2,19 @@ const crypto = require('crypto');
 const { google } = require('googleapis');
 const { getOAuth2Client } = require('../auth/oauth');
 
+// RFC 2047 encode a header value when it contains non-ASCII, so subjects with
+// accents/dashes/emoji don't get mangled by the mail client.
+function encodeHeader(value) {
+  const s = String(value || '');
+  if (/^[\x00-\x7F]*$/.test(s)) return s;
+  return `=?UTF-8?B?${Buffer.from(s, 'utf8').toString('base64')}?=`;
+}
+
 function buildRaw(to, subject, htmlBody, plainTextBody) {
   const boundary = 'boundary_speworderapp';
   const raw = [
     `To: ${to}`,
-    `Subject: ${subject}`,
+    `Subject: ${encodeHeader(subject)}`,
     'MIME-Version: 1.0',
     `Content-Type: multipart/alternative; boundary="${boundary}"`,
     '',
@@ -59,7 +67,7 @@ function buildRawRelated(to, subject, htmlBody, plainTextBody, inlineImages = []
   const alt = `alt_${crypto.randomBytes(8).toString('hex')}`;
   const rel = `rel_${crypto.randomBytes(8).toString('hex')}`;
   const hasImages = inlineImages.length > 0;
-  const lines = [`To: ${to}`, `Subject: ${subject}`, 'MIME-Version: 1.0'];
+  const lines = [`To: ${to}`, `Subject: ${encodeHeader(subject)}`, 'MIME-Version: 1.0'];
 
   if (hasImages) {
     lines.push(`Content-Type: multipart/related; boundary="${rel}"`, '', `--${rel}`);
@@ -73,7 +81,7 @@ function buildRawRelated(to, subject, htmlBody, plainTextBody, inlineImages = []
   for (const img of inlineImages) {
     lines.push(
       `--${rel}`,
-      `Content-Type: image/png; name="${img.filename}"`,
+      `Content-Type: ${img.type || 'image/png'}; name="${img.filename}"`,
       'Content-Transfer-Encoding: base64',
       `Content-ID: <${img.cid}>`,
       `Content-Disposition: inline; filename="${img.filename}"`,
