@@ -6,6 +6,7 @@ import { useBugLog } from '../context/BugLogContext';
 import DesignPicker from './DesignPicker';
 import ItemsTab from './ItemsTab';
 import BugLogTab from './BugLogTab';
+import StatusEmailsTab from './StatusEmailsTab';
 import Toast from './Toast';
 
 export default function SettingsScreen() {
@@ -72,6 +73,10 @@ export default function SettingsScreen() {
           onClick={() => setTab('items')}
         >Items</button>
         <button
+          className={`settings-tab${tab === 'status' ? ' active' : ''}`}
+          onClick={() => setTab('status')}
+        >Status Emails</button>
+        <button
           className={`settings-tab${tab === 'bugs' ? ' active' : ''}`}
           onClick={() => setTab('bugs')}
         >Bugs</button>
@@ -86,16 +91,6 @@ export default function SettingsScreen() {
           <div className="field-group">
             <label>Spew Email Address</label>
             <input type="email" value={settings.spewEmail} onChange={set('spewEmail')} />
-          </div>
-          <div className="field-group">
-            <label>
-              <input
-                type="checkbox"
-                checked={!!settings.autoSendCustomerEmails}
-                onChange={e => setSettings(s => ({ ...s, autoSendCustomerEmails: e.target.checked }))}
-              />
-              {' '}Auto-send customer status emails on state change
-            </label>
           </div>
           <div className="settings-section-label">Line Item Defaults</div>
           <div className="field-group">
@@ -146,6 +141,7 @@ export default function SettingsScreen() {
       )}
 
       {tab === 'items' && <ItemsTab />}
+      {tab === 'status' && <StatusEmailsTab />}
       {tab === 'bugs' && <BugLogTab />}
 
       <Toast message={toast} onDismiss={() => setToast(null)} />

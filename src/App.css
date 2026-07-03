@@ -1352,3 +1352,49 @@ textarea:focus {
 .modal-recipient { display: flex; align-items: center; gap: 6px; }
 .modal-error { color: #b91c1c; }
 .modal-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 16px; }
+
+/* Customers panel (v2) */
+.customers-heading { margin: 4px 0 12px; }
+.add-customer-form { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-bottom: 12px; }
+.add-customer-form input { padding: 6px 8px; box-sizing: border-box; }
+.add-customer-name { min-width: 160px; }
+.add-customer-email { min-width: 240px; }
+.customers-paste { margin-bottom: 12px; }
+.customers-paste-input {
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+  min-height: 90px;
+  background: #fff;
+  color: #222;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  padding: 8px;
+  margin-bottom: 8px;
+}
+.customers-empty, .customers-hint { color: #666; font-size: 0.9em; }
+.customers-preview { margin-top: 20px; }
+.preview-subject { font-size: 0.9em; color: #333; margin: 6px 0; }
+.email-preview-frame {
+  width: 100%;
+  max-width: 540px;
+  height: 520px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  background: #fff;
+}
+.customers-send-controls {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 28px; /* clear space between the draft button and the auto-send checkbox */
+  margin-top: 24px;
+}
+.draft-msg { color: #333; font-size: 0.9em; }
+.auto-send-toggle { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; font-weight: 600; }
+.auto-send-note { display: block; width: 100%; margin-left: 22px; color: #666; font-size: 0.8em; font-weight: 400; }
+
+/* Status Emails settings tab */
+.status-emails-hint { color: #555; font-size: 0.9em; }
+.status-emails-tab code { background: #eee; padding: 1px 5px; border-radius: 3px; }
+.status-email-block { margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px solid #eee; }

@@ -3,7 +3,7 @@ import { useParams, useSearchParams, useNavigate } from 'react-router-dom';
 import { useOrder } from '../hooks/useOrder';
 import { useItems } from '../hooks/useItems';
 import { upsertDraft } from '../api/gmail';
-import { getSettings } from '../api/settings';
+import { getSettings, saveSettings } from '../api/settings';
 import { decrementInventory, incrementInventory } from '../api/inventory';
 import { useBugLog } from '../context/BugLogContext';
 import { useInventory } from '../hooks/useInventory';
@@ -13,9 +13,8 @@ import DesignBrowser from './DesignBrowser';
 import OfflineBanner from './OfflineBanner';
 import Toast from './Toast';
 import CustomersPanel from './CustomersPanel';
-import CustomerEmailModal from './CustomerEmailModal';
 import { EMAIL_STATES } from '../emailStates';
-import { previewCustomerEmail, sendCustomerEmail } from '../api/customerEmails';
+import { sendCustomerEmail } from '../api/customerEmails';
 
 function nextLineItemNum(lineItems) {
   const max = lineItems.reduce((m, li) => Math.max(m, parseInt(li.num, 10) || 0), 0);
@@ -43,12 +42,23 @@ export default function OrderBuilder() {
   const [previewText, setPreviewText] = useState(null);
   const [showBackToTop, setShowBackToTop] = useState(false);
   const [activeTab, setActiveTab] = useState('order');
-  const [emailModalState, setEmailModalState] = useState(null); // which state's modal is open
+  const [autoSend, setAutoSend] = useState(false);
   const settingsRef = useRef({ defaultBackDesign: '', defaultBackNotes: '', autoSendCustomerEmails: false });
 
   useEffect(() => {
-    getSettings().then(s => { settingsRef.current = s; }).catch(() => {});
+    getSettings().then(s => { settingsRef.current = s; setAutoSend(!!s.autoSendCustomerEmails); }).catch(() => {});
   }, []);
+
+  async function handleToggleAutoSend(next) {
+    setAutoSend(next);
+    const updated = { ...settingsRef.current, autoSendCustomerEmails: next };
+    settingsRef.current = updated;
+    try {
+      await saveSettings(updated);
+    } catch (err) {
+      logError(`Could not save auto-send setting: ${err.message}`);
+    }
+  }
 
   useEffect(() => {
     const onScroll = () => setShowBackToTop(window.scrollY > 400);
@@ -257,20 +267,15 @@ export default function OrderBuilder() {
 
     setOrder(prev => ({ ...prev, state: nextState }));
 
-    if (EMAIL_STATES.includes(nextState)) {
+    if (EMAIL_STATES.includes(nextState) && autoSend) {
       const pending = (order.customers || []).filter(c => !(c.emailed && c.emailed[nextState]));
       if (pending.length > 0) {
-        if (settingsRef.current.autoSendCustomerEmails) {
-          try {
-            const { subject, body } = await previewCustomerEmail(sheetId, nextState);
-            const res = await sendCustomerEmail(sheetId, nextState, pending.map(c => ({ name: c.name, email: c.email })), subject, body);
-            stampEmailed(nextState, res.emails, res.at);
-            setToast(`Sent ${res.sent} ${nextState} email(s)`);
-          } catch (err) {
-            logError(`Auto-send failed: ${err.message}`);
-          }
-        } else {
-          setEmailModalState(nextState);
+        try {
+          const res = await sendCustomerEmail(sheetId, nextState, pending.map(c => ({ name: c.name, email: c.email })));
+          stampEmailed(nextState, res.emails, res.at);
+          setToast(`Sent ${res.sent} ${nextState} email(s)`);
+        } catch (err) {
+          logError(`Auto-send failed: ${err.message}`);
         }
       }
     }
@@ -359,18 +364,10 @@ export default function OrderBuilder() {
         <CustomersPanel
           customers={order.customers || []}
           onChange={setCustomers}
-          onSend={(state) => setEmailModalState(state)}
-        />
-      )}
-
-      {emailModalState && (
-        <CustomerEmailModal
           sheetId={sheetId}
-          state={emailModalState}
-          orderName={order.orderName || order.orderId}
-          customers={order.customers || []}
-          onClose={() => setEmailModalState(null)}
-          onSent={stampEmailed}
+          orderState={order.state}
+          autoSend={autoSend}
+          onToggleAutoSend={handleToggleAutoSend}
         />
       )}
 
