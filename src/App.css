@@ -1402,3 +1402,20 @@ textarea:focus {
 .status-emails-hint { color: #555; font-size: 0.9em; }
 .status-emails-tab code { background: #eee; padding: 1px 5px; border-radius: 3px; }
 .status-email-block { margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px solid #eee; }
+
+.placeholder-help {
+  background: #fbe9dd;
+  border: 1px solid #e07a3f;
+  border-left: 5px solid #e07a3f;
+  border-radius: 6px;
+  padding: 10px 14px;
+  margin-bottom: 16px;
+  font-size: 0.9em;
+  color: #5a3a28;
+}
+.placeholder-help-title { font-weight: 700; margin-bottom: 6px; }
+.placeholder-help > div { margin: 3px 0; }
+.placeholder-help code { background: #fff; border: 1px solid #e0c3b0; padding: 1px 5px; border-radius: 3px; }
+
+/* All text-entry boxes get a white background */
+input, textarea, select { background-color: #fff; color: #222; }

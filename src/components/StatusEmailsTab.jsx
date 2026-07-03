@@ -35,10 +35,11 @@ export default function StatusEmailsTab() {
 
   return (
     <div className="status-emails-tab">
-      <p className="status-emails-hint">
-        Use <code>[customer name]</code> (replaced with each customer&apos;s name, or the generic name below when they have none)
-        and <code>[order name]</code> in any subject or body.
-      </p>
+      <div className="placeholder-help">
+        <div className="placeholder-help-title">Placeholders you can use in any subject or body:</div>
+        <div><code>[customer name]</code> — replaced with each customer&apos;s name (or the generic name below when they have none).</div>
+        <div><code>[order name]</code> — replaced with this order&apos;s name.</div>
+      </div>
 
       <div className="field-group">
         <label>Generic Customer Name (used when a customer has no name)</label>
