@@ -94,4 +94,13 @@ async function sendEmail(to, subject, htmlBody, plainTextBody, inlineImages = []
   return res.data.id;
 }
 
-module.exports = { upsertDraft, sendEmail, buildRawRelated };
+// Creates a Gmail draft (does not send) with optional inline images.
+async function createDraft(to, subject, htmlBody, plainTextBody, inlineImages = []) {
+  const auth = getOAuth2Client();
+  const gmail = google.gmail({ version: 'v1', auth });
+  const raw = buildRawRelated(to, subject, htmlBody, plainTextBody, inlineImages);
+  const res = await gmail.users.drafts.create({ userId: 'me', resource: { message: { raw } } });
+  return res.data.id;
+}
+
+module.exports = { upsertDraft, sendEmail, createDraft, buildRawRelated };

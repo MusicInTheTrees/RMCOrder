@@ -1,33 +1,46 @@
-const { customerEmailDefaults, buildCustomerEmail, logoAttachment, LOGO_CID } = require('../gmail/customerEmailBuilder');
+const { buildCustomerEmail, applyPlaceholders, DEFAULT_TEMPLATES, logoAttachment, LOGO_CID } = require('../gmail/customerEmailBuilder');
 
-test('defaults resolve {orderName} in the body', () => {
-  const { subject, body } = customerEmailDefaults('shipped', 'Summer Drop');
-  expect(subject).toBe('Your RMC order is on its way! 📦');
-  expect(body).toContain('"Summer Drop"');
-  expect(body).not.toContain('{orderName}');
+test('applyPlaceholders uses customer name and order name when present', () => {
+  const out = applyPlaceholders('Hello [customer name], order "[order name]"',
+    { customerName: 'Jordan', genericName: 'Fellow Cat Lover', orderName: 'Summer Drop' });
+  expect(out).toBe('Hello Jordan, order "Summer Drop"');
 });
 
-test('unknown state throws', () => {
-  expect(() => customerEmailDefaults('paid', 'X')).toThrow();
+test('applyPlaceholders falls back to generic name when customer name blank', () => {
+  const out = applyPlaceholders('Hello [customer name]',
+    { customerName: '', genericName: 'Fellow Cat Lover', orderName: 'X' });
+  expect(out).toBe('Hello Fellow Cat Lover');
 });
 
-test('html greets by name and embeds logo via cid', () => {
-  const { html } = buildCustomerEmail({ state: 'sent', customerName: 'Jordan', subject: 'S', body: 'Body text.' });
-  expect(html).toContain('Hi Jordan');
+test('applyPlaceholders is case-insensitive and tolerant of internal spacing', () => {
+  const out = applyPlaceholders('Hi [Customer  Name] / [ORDER NAME]',
+    { customerName: 'A', genericName: 'G', orderName: 'O' });
+  expect(out).toBe('Hi A / O');
+});
+
+test('buildCustomerEmail renders template with logo cid, pill, and resolved placeholders', () => {
+  const { subject, html, plain } = buildCustomerEmail({
+    state: 'shipped', template: DEFAULT_TEMPLATES.shipped,
+    customerName: 'Jordan', genericName: 'Fellow Cat Lover', orderName: 'Summer Drop',
+  });
+  expect(subject).toContain('on its way');
   expect(html).toContain(`cid:${LOGO_CID}`);
-  expect(html).toContain('Body text.');
-  expect(html).toContain('In Production'); // pill/status label for sent
+  expect(html).toContain('Hello Jordan');
+  expect(html).toContain('Summer Drop');
+  expect(html).toContain('Shipped'); // status label chrome
+  expect(plain).toContain('Hello Jordan');
 });
 
-test('html falls back to "Hi there" when name blank', () => {
-  const { html, plain } = buildCustomerEmail({ state: 'shipped', customerName: '', subject: 'S', body: 'B' });
-  expect(html).toContain('Hi there');
-  expect(plain).toContain('Hi there');
+test('buildCustomerEmail uses generic name when customer name blank', () => {
+  const { html } = buildCustomerEmail({
+    state: 'sent', template: DEFAULT_TEMPLATES.sent,
+    customerName: '', genericName: 'Fellow Cat Lover', orderName: 'X',
+  });
+  expect(html).toContain('Hello Fellow Cat Lover');
 });
 
-test('subject passes through from caller (edited)', () => {
-  const { subject } = buildCustomerEmail({ state: 'received', customerName: 'A', subject: 'Custom subject', body: 'B' });
-  expect(subject).toBe('Custom subject');
+test('buildCustomerEmail throws for a state with no template', () => {
+  expect(() => buildCustomerEmail({ state: 'paid', customerName: 'A' })).toThrow();
 });
 
 test('logoAttachment returns a Buffer with the agreed cid', () => {
