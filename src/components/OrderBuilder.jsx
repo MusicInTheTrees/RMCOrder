@@ -37,10 +37,18 @@ export default function OrderBuilder() {
   const [toast, setToast] = useState(null);
   const [saveMsg, setSaveMsg] = useState(null);
   const [previewText, setPreviewText] = useState(null);
+  const [showBackToTop, setShowBackToTop] = useState(false);
   const settingsRef = useRef({ defaultBackDesign: '', defaultBackNotes: '' });
 
   useEffect(() => {
     getSettings().then(s => { settingsRef.current = s; }).catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    const onScroll = () => setShowBackToTop(window.scrollY > 400);
+    onScroll();
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
   }, []);
 
   if (loadError) {
@@ -303,6 +311,15 @@ export default function OrderBuilder() {
           <pre className="email-preview">{previewText}</pre>
         )}
       </div>
+
+      <button
+        className={`back-to-top-fab${showBackToTop ? ' visible' : ''}`}
+        onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+        aria-label="Back to top"
+        title="Back to top"
+      >
+        ↑
+      </button>
 
       <Toast message={toast} onDismiss={() => setToast(null)} />
     </div>
