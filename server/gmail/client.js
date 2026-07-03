@@ -49,4 +49,47 @@ async function upsertDraft(to, subject, htmlBody, plainTextBody, existingDraftId
   return res.data.id;
 }
 
-module.exports = { upsertDraft };
+function wrap76(b64) {
+  return b64.match(/.{1,76}/g).join('\r\n');
+}
+
+function buildRawRelated(to, subject, htmlBody, plainTextBody, inlineImages = []) {
+  const alt = 'alt_rmc';
+  const rel = 'rel_rmc';
+  const hasImages = inlineImages.length > 0;
+  const lines = [`To: ${to}`, `Subject: ${subject}`, 'MIME-Version: 1.0'];
+
+  if (hasImages) {
+    lines.push(`Content-Type: multipart/related; boundary="${rel}"`, '', `--${rel}`);
+  }
+  lines.push(
+    `Content-Type: multipart/alternative; boundary="${alt}"`, '',
+    `--${alt}`, 'Content-Type: text/plain; charset=UTF-8', '', plainTextBody, '',
+    `--${alt}`, 'Content-Type: text/html; charset=UTF-8', '', htmlBody, '',
+    `--${alt}--`, '',
+  );
+  for (const img of inlineImages) {
+    lines.push(
+      `--${rel}`,
+      `Content-Type: image/png; name="${img.filename}"`,
+      'Content-Transfer-Encoding: base64',
+      `Content-ID: <${img.cid}>`,
+      `Content-Disposition: inline; filename="${img.filename}"`,
+      '',
+      wrap76(img.content.toString('base64')),
+      '',
+    );
+  }
+  if (hasImages) lines.push(`--${rel}--`);
+  return Buffer.from(lines.join('\r\n')).toString('base64url');
+}
+
+async function sendEmail(to, subject, htmlBody, plainTextBody, inlineImages = []) {
+  const auth = getOAuth2Client();
+  const gmail = google.gmail({ version: 'v1', auth });
+  const raw = buildRawRelated(to, subject, htmlBody, plainTextBody, inlineImages);
+  const res = await gmail.users.messages.send({ userId: 'me', resource: { raw } });
+  return res.data.id;
+}
+
+module.exports = { upsertDraft, sendEmail, buildRawRelated };
