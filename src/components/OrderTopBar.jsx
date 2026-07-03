@@ -2,7 +2,7 @@ import { useState } from 'react';
 import StateBadge from './StateBadge';
 import ConfirmDialog from './ConfirmDialog';
 
-const STATE_ORDER = ['building', 'sent', 'pending', 'paid', 'fulfilled', 'received'];
+const STATE_ORDER = ['building', 'sent', 'pending', 'paid', 'fulfilled', 'received', 'shipped'];
 
 export default function OrderTopBar({ order, onAdvanceState, onGenerateDraft, saving, onNameChange }) {
   const [confirmState, setConfirmState] = useState(false);
