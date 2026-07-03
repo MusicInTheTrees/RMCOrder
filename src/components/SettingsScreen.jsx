@@ -16,6 +16,7 @@ export default function SettingsScreen() {
     spewEmail: '',
     defaultBackDesign: '',
     defaultBackNotes: '',
+    autoSendCustomerEmails: false,
   });
   const [email, setEmail] = useState(null);
   const [toast, setToast] = useState(null);
@@ -85,6 +86,16 @@ export default function SettingsScreen() {
           <div className="field-group">
             <label>Spew Email Address</label>
             <input type="email" value={settings.spewEmail} onChange={set('spewEmail')} />
+          </div>
+          <div className="field-group">
+            <label>
+              <input
+                type="checkbox"
+                checked={!!settings.autoSendCustomerEmails}
+                onChange={e => setSettings(s => ({ ...s, autoSendCustomerEmails: e.target.checked }))}
+              />
+              {' '}Auto-send customer status emails on state change
+            </label>
           </div>
           <div className="settings-section-label">Line Item Defaults</div>
           <div className="field-group">

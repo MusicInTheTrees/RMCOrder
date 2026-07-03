@@ -12,6 +12,10 @@ import LineItemCard from './LineItemCard';
 import DesignBrowser from './DesignBrowser';
 import OfflineBanner from './OfflineBanner';
 import Toast from './Toast';
+import CustomersPanel from './CustomersPanel';
+import CustomerEmailModal from './CustomerEmailModal';
+import { EMAIL_STATES } from '../emailStates';
+import { previewCustomerEmail, sendCustomerEmail } from '../api/customerEmails';
 
 function nextLineItemNum(lineItems) {
   const max = lineItems.reduce((m, li) => Math.max(m, parseInt(li.num, 10) || 0), 0);
@@ -38,7 +42,9 @@ export default function OrderBuilder() {
   const [saveMsg, setSaveMsg] = useState(null);
   const [previewText, setPreviewText] = useState(null);
   const [showBackToTop, setShowBackToTop] = useState(false);
-  const settingsRef = useRef({ defaultBackDesign: '', defaultBackNotes: '' });
+  const [activeTab, setActiveTab] = useState('order');
+  const [emailModalState, setEmailModalState] = useState(null); // which state's modal is open
+  const settingsRef = useRef({ defaultBackDesign: '', defaultBackNotes: '', autoSendCustomerEmails: false });
 
   useEffect(() => {
     getSettings().then(s => { settingsRef.current = s; }).catch(() => {});
@@ -92,6 +98,18 @@ export default function OrderBuilder() {
     setOrder(prev => ({
       ...prev,
       lineItems: prev.lineItems.map(li => li.num === num ? updated : li),
+    }));
+  }
+
+  function setCustomers(next) {
+    setOrder(prev => ({ ...prev, customers: next }));
+  }
+
+  function stampEmailed(state, emails, at) {
+    setOrder(prev => ({
+      ...prev,
+      customers: (prev.customers || []).map(c =>
+        emails.includes(c.email) ? { ...c, emailed: { ...(c.emailed || {}), [state]: at } } : c),
     }));
   }
 
@@ -238,6 +256,24 @@ export default function OrderBuilder() {
     }
 
     setOrder(prev => ({ ...prev, state: nextState }));
+
+    if (EMAIL_STATES.includes(nextState)) {
+      const pending = (order.customers || []).filter(c => !(c.emailed && c.emailed[nextState]));
+      if (pending.length > 0) {
+        if (settingsRef.current.autoSendCustomerEmails) {
+          try {
+            const { subject, body } = await previewCustomerEmail(sheetId, nextState);
+            const res = await sendCustomerEmail(sheetId, nextState, pending.map(c => ({ name: c.name, email: c.email })), subject, body);
+            stampEmailed(nextState, res.emails, res.at);
+            setToast(`Sent ${res.sent} ${nextState} email(s)`);
+          } catch (err) {
+            logError(`Auto-send failed: ${err.message}`);
+          }
+        } else {
+          setEmailModalState(nextState);
+        }
+      }
+    }
   }
 
   return (
@@ -253,6 +289,12 @@ export default function OrderBuilder() {
         onNameChange={name => setOrder(prev => ({ ...prev, orderName: name }))}
       />
 
+      <div className="order-tabs">
+        <button className={`order-tab${activeTab === 'order' ? ' active' : ''}`} onClick={() => setActiveTab('order')}>Order</button>
+        <button className={`order-tab${activeTab === 'customers' ? ' active' : ''}`} onClick={() => setActiveTab('customers')}>Customers</button>
+      </div>
+
+      {activeTab === 'order' && (<>
       <div className="order-notes-section">
         <div className="field-section-header">Global Notes</div>
         <textarea
@@ -311,6 +353,26 @@ export default function OrderBuilder() {
           <pre className="email-preview">{previewText}</pre>
         )}
       </div>
+      </>)}
+
+      {activeTab === 'customers' && (
+        <CustomersPanel
+          customers={order.customers || []}
+          onChange={setCustomers}
+          onSend={(state) => setEmailModalState(state)}
+        />
+      )}
+
+      {emailModalState && (
+        <CustomerEmailModal
+          sheetId={sheetId}
+          state={emailModalState}
+          orderName={order.orderName || order.orderId}
+          customers={order.customers || []}
+          onClose={() => setEmailModalState(null)}
+          onSent={stampEmailed}
+        />
+      )}
 
       <button
         className={`back-to-top-fab${showBackToTop ? ' visible' : ''}`}

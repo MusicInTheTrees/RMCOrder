@@ -1,4 +1,4 @@
-import { describe, test, expect, vi, beforeEach } from 'vitest';
+import { test, expect, vi, beforeEach } from 'vitest';
 import { apiFetch } from '../api/client';
 import { previewCustomerEmail, sendCustomerEmail } from '../api/customerEmails';
 import { EMAIL_STATES } from '../emailStates';
