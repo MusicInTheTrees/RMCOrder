@@ -1327,3 +1327,28 @@ textarea:focus {
   font-style: italic;
   margin: 4px 0;
 }
+
+/* Customer emails */
+.order-tabs { display: flex; gap: 8px; margin: 12px 0; }
+.order-tab { padding: 8px 16px; border: 1px solid #ccc; background: #f5f5f5; border-radius: 6px 6px 0 0; cursor: pointer; }
+.order-tab.active { background: #22402f; color: #fff; border-color: #22402f; }
+
+.customers-panel { padding: 12px 0; }
+.customers-actions { display: flex; gap: 8px; margin-bottom: 12px; }
+.customers-paste textarea { width: 100%; min-height: 90px; margin-bottom: 8px; }
+.customers-skipped { color: #b45309; font-size: 0.85em; }
+.customers-table { width: 100%; border-collapse: collapse; margin-bottom: 16px; }
+.customers-table th, .customers-table td { text-align: left; padding: 4px 6px; }
+.customers-table input { width: 100%; }
+.btn-remove { color: #b91c1c; background: none; border: none; cursor: pointer; }
+.customers-send-row { display: flex; align-items: center; gap: 12px; margin-bottom: 6px; }
+.customers-pending { color: #666; font-size: 0.85em; }
+
+.modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.45); display: flex; align-items: center; justify-content: center; z-index: 100; }
+.customer-email-modal { background: #fff; border-radius: 10px; padding: 20px; width: min(560px, 92vw); max-height: 88vh; overflow-y: auto; }
+.modal-label { display: block; font-weight: 600; margin: 12px 0 4px; }
+.modal-input, .modal-textarea { width: 100%; }
+.modal-recipients { display: flex; flex-direction: column; gap: 4px; max-height: 180px; overflow-y: auto; }
+.modal-recipient { display: flex; align-items: center; gap: 6px; }
+.modal-error { color: #b91c1c; }
+.modal-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 16px; }
