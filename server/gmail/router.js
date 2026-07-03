@@ -1,11 +1,12 @@
 const express = require('express');
 const requireAuth = require('../middleware/requireAuth');
-const { readOrderFromSheet } = require('../sheets/orderSheet');
-const { readOrderCache } = require('../orders/cache');
+const { readOrderFromSheet, writeCustomersToSheet, EMAIL_STATES } = require('../sheets/orderSheet');
+const { readOrderCache, writeOrderCache } = require('../orders/cache');
 const { readSettings } = require('../settings/store');
 const { readCatalog } = require('../items/store');
 const { buildEmailHtml, buildEmailPlainText } = require('./emailBuilder');
-const { upsertDraft } = require('./client');
+const { upsertDraft, sendEmail } = require('./client');
+const { buildCustomerEmail, customerEmailDefaults, logoAttachment } = require('./customerEmailBuilder');
 const { listFiles, findFileByName, findFolderByName, copyFile, shareFileWithUser } = require('../drive/client');
 const { readRange } = require('../sheets/client');
 const config = require('../config');
@@ -78,6 +79,68 @@ router.post('/draft', async (req, res) => {
     const plain = buildEmailPlainText(orderData, settings, catalogByName);
     const draftId = await upsertDraft(settings.spewEmail, subject, html, plain, existingDraftId || null);
     res.json({ draftId });
+  } catch (err) {
+    const msg = err.message || '';
+    if (msg.includes('gmail.googleapis.com') && msg.includes('disabled')) {
+      return res.status(500).json({ error: 'Gmail API is not enabled for this Google Cloud project. Enable it at console.developers.google.com → APIs & Services → Gmail API, then try again.' });
+    }
+    res.status(500).json({ error: msg });
+  }
+});
+
+async function loadOrder(sheetId) {
+  try {
+    const meta = await readRange(sheetId, 'Sheet1!A1:B10');
+    const infoMap = Object.fromEntries(meta.map(([k, v]) => [k, v]));
+    const orderId = infoMap['Order ID'] || '';
+    if (orderId) {
+      const cached = readOrderCache(orderId);
+      if (cached) return cached;
+    }
+  } catch { /* fall through */ }
+  return readOrderFromSheet(sheetId);
+}
+
+router.post('/customer-email/preview', async (req, res) => {
+  const { sheetId, state } = req.body;
+  if (!sheetId || !state) return res.status(400).json({ error: 'sheetId and state required' });
+  if (!EMAIL_STATES.includes(state)) return res.status(400).json({ error: `State "${state}" does not send customer emails` });
+  try {
+    const order = await loadOrder(sheetId);
+    res.json(customerEmailDefaults(state, order.orderName));
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.post('/customer-email/send', async (req, res) => {
+  const { sheetId, state, recipients, subject, body } = req.body;
+  if (!sheetId || !state) return res.status(400).json({ error: 'sheetId and state required' });
+  if (!EMAIL_STATES.includes(state)) return res.status(400).json({ error: `State "${state}" does not send customer emails` });
+  if (!Array.isArray(recipients) || recipients.length === 0) return res.status(400).json({ error: 'recipients required' });
+  try {
+    const order = await loadOrder(sheetId);
+    const attachment = logoAttachment();
+    const at = new Date().toISOString();
+    const emails = [];
+
+    for (const r of recipients) {
+      const { subject: subj, html, plain } = buildCustomerEmail({ state, customerName: r.name, subject, body });
+      await sendEmail(r.email, subj, html, plain, [attachment]);
+      emails.push(r.email);
+    }
+
+    // Stamp timestamps on matching customers
+    order.customers = (order.customers || []).map(c => {
+      if (!emails.includes(c.email)) return c;
+      return { ...c, emailed: { ...(c.emailed || {}), [state]: at } };
+    });
+
+    writeOrderCache(order.orderId, order);
+    await writeCustomersToSheet(sheetId, order.customers).catch(err =>
+      console.warn('Could not write Customers tab:', err.message));
+
+    res.json({ sent: emails.length, at, emails });
   } catch (err) {
     const msg = err.message || '';
     if (msg.includes('gmail.googleapis.com') && msg.includes('disabled')) {
