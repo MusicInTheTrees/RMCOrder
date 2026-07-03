@@ -1,3 +1,4 @@
+const crypto = require('crypto');
 const { google } = require('googleapis');
 const { getOAuth2Client } = require('../auth/oauth');
 
@@ -50,12 +51,13 @@ async function upsertDraft(to, subject, htmlBody, plainTextBody, existingDraftId
 }
 
 function wrap76(b64) {
+  if (!b64) return '';
   return b64.match(/.{1,76}/g).join('\r\n');
 }
 
 function buildRawRelated(to, subject, htmlBody, plainTextBody, inlineImages = []) {
-  const alt = 'alt_rmc';
-  const rel = 'rel_rmc';
+  const alt = `alt_${crypto.randomBytes(8).toString('hex')}`;
+  const rel = `rel_${crypto.randomBytes(8).toString('hex')}`;
   const hasImages = inlineImages.length > 0;
   const lines = [`To: ${to}`, `Subject: ${subject}`, 'MIME-Version: 1.0'];
 

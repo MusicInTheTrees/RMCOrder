@@ -12,6 +12,7 @@ test('buildRawRelated wraps html+plain with no images', () => {
   expect(raw).toContain('text/plain');
   expect(raw).toContain('text/html');
   expect(raw).not.toContain('multipart/related');
+  expect(raw).toMatch(/\r\n/);
 });
 
 test('buildRawRelated adds a related image part with Content-ID', () => {
@@ -21,4 +22,5 @@ test('buildRawRelated adds a related image part with Content-ID', () => {
   expect(raw).toContain('Content-ID: <rmclogo>');
   expect(raw).toContain('Content-Disposition: inline; filename="rmc_logo.png"');
   expect(raw).toContain(Buffer.from('PNGDATA').toString('base64'));
+  expect(raw).toMatch(/\r\n/);
 });
