@@ -39,6 +39,10 @@ router.post('/draft', async (req, res) => {
     // Copy design files to order's Designs subfolder in Drive
     const orderFolder = await findFileByName(orderData.orderId, config.DRIVE.ORDER_FOLDER);
     if (orderFolder) {
+      // Ensure the email links to the real Drive folder even if the cached/sheet
+      // order data is missing folderId (e.g. older orders).
+      orderData.folderId = orderFolder.id;
+
       // Give the recipient view access to the order folder so the emailed link works.
       // Cascades to the Sheet + Designs inside. Non-fatal if it fails (e.g. already shared).
       await shareFileWithUser(orderFolder.id, settings.spewEmail, 'reader').catch(err =>
