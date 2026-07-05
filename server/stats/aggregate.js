@@ -44,7 +44,7 @@ function aggregate(orders, catalog) {
       for (const [size, v] of Object.entries(li.sizes || {})) {
         const total = (v && v.total) || 0;
         if (total <= 0) continue;
-        const key = `${itemType} ${color} ${size}`;
+        const key = `${itemType}\x00${color}\x00${size}`;
         const row = target.get(key) || { itemType, color, size, total: 0 };
         row.total += total;
         target.set(key, row);

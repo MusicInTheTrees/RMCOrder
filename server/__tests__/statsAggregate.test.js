@@ -105,3 +105,22 @@ test('missing color renders as (no color)', () => {
   const { shirts } = aggregate(orders, catalog);
   expect(shirts[0].color).toBe('(no color)');
 });
+
+test('breaks ties in total by itemType, then color, then size', () => {
+  const orders = [
+    order('sent', [
+      { itemTypeName: 'Unisex Tee', itemTypeId: 'tee1', color: 'Red',
+        sizes: { S: { total: 5, inventory: 0 } } },
+      { itemTypeName: 'Unisex Tee', itemTypeId: 'tee1', color: 'Blue',
+        sizes: { M: { total: 5, inventory: 0 } } },
+      { itemTypeName: 'Unisex Tee', itemTypeId: 'tee1', color: 'Green',
+        sizes: { L: { total: 5, inventory: 0 } } },
+    ]),
+  ];
+  const { shirts } = aggregate(orders, catalog);
+  expect(shirts).toHaveLength(3);
+  // All have equal total (5), so sorted by color ascending
+  expect(shirts[0]).toEqual({ itemType: 'Unisex Tee', color: 'Blue', size: 'M', total: 5 });
+  expect(shirts[1]).toEqual({ itemType: 'Unisex Tee', color: 'Green', size: 'L', total: 5 });
+  expect(shirts[2]).toEqual({ itemType: 'Unisex Tee', color: 'Red', size: 'S', total: 5 });
+});
