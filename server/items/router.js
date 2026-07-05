@@ -17,7 +17,7 @@ router.get('/', (_req, res) => {
 router.post('/', (req, res) => {
   const { name = 'New Item' } = req.body;
   const catalog = readCatalog();
-  const item = { id: createId(), name, supplierUrl: '', colors: [], sizes: [], decorationMethods: [] };
+  const item = { id: createId(), name, supplierUrl: '', colors: [], sizes: [], decorationMethods: [], stockBlanks: false };
   catalog.items.push(item);
   writeCatalog(catalog);
   res.json(item);
