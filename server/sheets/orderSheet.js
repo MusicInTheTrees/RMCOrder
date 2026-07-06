@@ -1,6 +1,6 @@
 const { readRange, writeRange, clearRange, addSheet, getSheetNames } = require('./client');
 
-const EMAIL_STATES = ['sent', 'fulfilled', 'received', 'shipped'];
+const EMAIL_STATES = ['sent', 'shipped', 'delayed'];
 const CUSTOMER_HEADER = ['Name', 'Email', ...EMAIL_STATES.map(s => `Sent: ${s}`)];
 
 function customersToRows(customers) {

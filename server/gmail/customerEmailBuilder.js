@@ -9,15 +9,13 @@ const HEADER_PATH = path.join(__dirname, '..', 'assets', 'email_header.jpg');
 // Chrome (fixed, not user-editable): status pill + short status label per state.
 const PILLS = {
   sent: '🖨️ In Production',
-  fulfilled: '✅ Printed',
-  received: '📥 In-Hand',
   shipped: '📦 Shipped',
+  delayed: '⏳ Delayed',
 };
 const STATUS_LABELS = {
   sent: 'In Production',
-  fulfilled: 'Printed',
-  received: 'In-Hand',
   shipped: 'Shipped',
+  delayed: 'Delayed',
 };
 
 // Editable per-status templates (subject + body). The body may use the
@@ -28,17 +26,13 @@ const DEFAULT_TEMPLATES = {
     subject: 'Your RMC order is being made',
     body: `Hello [customer name],\n\nYour order "[order name]" is now with our print shop getting made. We'll keep you posted as it moves along. Thanks for repping the Meowtain! 🐱`,
   },
-  fulfilled: {
-    subject: 'Your RMC order is printed',
-    body: `Hello [customer name],\n\nGreat news — your order "[order name]" is finished at the print shop and we're heading out to pick it up. You're almost at the summit! 🏔️`,
-  },
-  received: {
-    subject: 'Your RMC order is in-hand',
-    body: `Hello [customer name],\n\nYour order "[order name]" has arrived at RMC and we're getting it packed up and ready for you. We'll let you know the moment it's on its way. 🐾`,
-  },
   shipped: {
     subject: 'Your RMC order is on its way!',
     body: `Hello [customer name],\n\nYour order "[order name]" just left the den. Keep an eye out — your gear should reach you soon. Thanks for repping the Meowtain! 🐱`,
+  },
+  delayed: {
+    subject: 'A quick update on your RMC order',
+    body: `Hello [customer name],\n\nYour order "[order name]" is running a little behind schedule. We're sorry for the wait and are working to get it moving again — we'll let you know as soon as it's back on track. Thanks for your patience! 🐾`,
   },
 };
 

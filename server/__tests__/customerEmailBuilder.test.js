@@ -18,7 +18,7 @@ test('stripEmoji removes emoji but keeps plain text', () => {
 });
 
 test('default subjects contain no emoji', () => {
-  for (const state of ['sent', 'fulfilled', 'received', 'shipped']) {
+  for (const state of ['sent', 'shipped', 'delayed']) {
     expect(DEFAULT_TEMPLATES[state].subject).toBe(stripEmoji(DEFAULT_TEMPLATES[state].subject));
   }
 });

@@ -112,7 +112,7 @@ test('readOrderFromSheet reads legacy format with inventory', async () => {
 });
 
 test('EMAIL_STATES is the agreed set', () => {
-  expect(EMAIL_STATES).toEqual(['sent', 'fulfilled', 'received', 'shipped']);
+  expect(EMAIL_STATES).toEqual(['sent', 'shipped', 'delayed']);
 });
 
 test('writeOrderToSheet writes the Customers tab', async () => {
@@ -130,9 +130,9 @@ test('writeOrderToSheet writes the Customers tab', async () => {
   const call = writeRange.mock.calls.find(c => c[1].includes('Customers'));
   expect(call).toBeTruthy();
   const rows = call[2];
-  expect(rows[0]).toEqual(['Name', 'Email', 'Sent: sent', 'Sent: fulfilled', 'Sent: received', 'Sent: shipped']);
-  expect(rows[1]).toEqual(['Jordan', 'jordan@x.com', '2026-07-03T00:00:00Z', '', '', '']);
-  expect(rows[2]).toEqual(['', 'sam@x.com', '', '', '', '']);
+  expect(rows[0]).toEqual(['Name', 'Email', 'Sent: sent', 'Sent: shipped', 'Sent: delayed']);
+  expect(rows[1]).toEqual(['Jordan', 'jordan@x.com', '2026-07-03T00:00:00Z', '', '']);
+  expect(rows[2]).toEqual(['', 'sam@x.com', '', '', '']);
 });
 
 test('readOrderFromSheet reads the Customers tab', async () => {
@@ -145,14 +145,14 @@ test('readOrderFromSheet reads the Customers tab', async () => {
     ]);
     if (range.startsWith('Designs')) return Promise.resolve([]);
     if (range.startsWith('Customers')) return Promise.resolve([
-      ['Name', 'Email', 'Sent: sent', 'Sent: fulfilled', 'Sent: received', 'Sent: shipped'],
-      ['Jordan', 'jordan@x.com', '2026-07-03T00:00:00Z', '', '', ''],
+      ['Name', 'Email', 'Sent: sent', 'Sent: shipped', 'Sent: delayed'],
+      ['Jordan', 'jordan@x.com', '2026-07-03T00:00:00Z', '', ''],
     ]);
     return Promise.resolve([]);
   });
   const order = await readOrderFromSheet('s');
   expect(order.customers).toEqual([
-    { name: 'Jordan', email: 'jordan@x.com', emailed: { sent: '2026-07-03T00:00:00Z', fulfilled: '', received: '', shipped: '' } },
+    { name: 'Jordan', email: 'jordan@x.com', emailed: { sent: '2026-07-03T00:00:00Z', shipped: '', delayed: '' } },
   ]);
 });
 
@@ -171,5 +171,5 @@ test('writeCustomersToSheet writes only the Customers tab', async () => {
   writeRange.mockResolvedValue();
   await writeCustomersToSheet('s', [{ name: 'A', email: 'a@x.com', emailed: { shipped: '2026-07-03T00:00:00Z' } }]);
   const call = writeRange.mock.calls.find(c => c[1].includes('Customers'));
-  expect(call[2][1]).toEqual(['A', 'a@x.com', '', '', '', '2026-07-03T00:00:00Z']);
+  expect(call[2][1]).toEqual(['A', 'a@x.com', '', '2026-07-03T00:00:00Z', '']);
 });

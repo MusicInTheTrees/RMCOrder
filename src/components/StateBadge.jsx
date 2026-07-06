@@ -6,6 +6,7 @@ export const STATE_COLORS = {
   fulfilled: '#3b82f6',
   received:  '#8b5cf6',
   shipped:   '#14b8a6',
+  delayed:   '#f59e0b',
 };
 
 export default function StateBadge({ state, dimmed = false }) {
