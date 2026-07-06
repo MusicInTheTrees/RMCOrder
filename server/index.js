@@ -1,6 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const fs = require('fs');
+const path = require('path');
 const config = require('./config');
 
 const app = express();
@@ -10,6 +11,7 @@ app.use(express.json());
 fs.mkdirSync(config.DESIGNS_CACHE_DIR, { recursive: true });
 fs.mkdirSync(config.ORDERS_CACHE_DIR, { recursive: true });
 app.use('/designs-cache', express.static(config.DESIGNS_CACHE_DIR));
+app.use('/assets', express.static(path.join(__dirname, 'assets')));
 
 // Sync designs on startup (non-blocking)
 const { syncDesignsCache } = require('./drive/designsCache');
@@ -27,6 +29,7 @@ app.use('/settings', require('./settings/router'));
 app.use('/items', require('./items/router'));
 app.use('/buglog', require('./buglog/router'));
 app.use('/inventory', require('./inventory/router'));
+app.use('/stats', require('./stats/router'));
 
 if (require.main === module) {
   app.listen(config.PORT, () => console.log(`Server running on port ${config.PORT}`));

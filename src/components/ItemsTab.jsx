@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { useItems } from '../hooks/useItems';
 import { useBugLog } from '../context/BugLogContext';
 import { getInventoryStyles } from '../api/inventory';
+import { refreshBlankStats } from '../api/stats';
 import ColorPicker from './ColorPicker';
 import Toast from './Toast';
 import ConfirmDialog from './ConfirmDialog';
@@ -44,6 +45,7 @@ export default function ItemsTab() {
   const [styleOptions, setStyleOptions] = useState([]);
   const [toast, setToast] = useState(null);
   const [confirmPull, setConfirmPull] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
   const [expandedColor, setExpandedColor] = useState(null); // { name, hex }
   const [scrapeResult, setScrapeResult] = useState(null);
   const dragSizeIdx = useRef(null);
@@ -105,6 +107,20 @@ export default function ItemsTab() {
     } catch (err) {
       const msg = `Pull failed: ${err.message}`;
       setToast(msg); logError(msg);
+    }
+  }
+
+  async function handleRefreshStats() {
+    setRefreshing(true);
+    try {
+      const r = await refreshBlankStats();
+      setToast(`Updated ${r.rowCount} rows across ${r.orderCount} orders.`);
+      window.open(r.sheetUrl, '_blank', 'noopener,noreferrer');
+    } catch (err) {
+      const msg = `Refresh stats failed: ${err.message}`;
+      setToast(msg); logError(msg);
+    } finally {
+      setRefreshing(false);
     }
   }
 
@@ -249,6 +265,9 @@ export default function ItemsTab() {
       <div className="items-sync-bar">
         <button className="btn-secondary" onClick={handlePush}>⬆ Push to Drive</button>
         <button className="btn-secondary items-pull-btn" onClick={() => setConfirmPull(true)}>⬇ Pull from Drive</button>
+        <button className="btn-secondary" onClick={handleRefreshStats} disabled={refreshing}>
+          {refreshing ? 'Refreshing…' : '📊 Refresh Blank Stats'}
+        </button>
       </div>
 
       <div className="items-layout">
@@ -276,6 +295,16 @@ export default function ItemsTab() {
                   value={selectedItem.name}
                   onChange={e => updateField('name', e.target.value)}
                 />
+              </div>
+              <div className="field-group">
+                <label>
+                  <input
+                    type="checkbox"
+                    checked={!!selectedItem.stockBlanks}
+                    onChange={e => updateField('stockBlanks', e.target.checked)}
+                  />
+                  {' '}Stock blanks (include in blank demand stats)
+                </label>
               </div>
               <div className="field-group">
                 <label>Inventory Item</label>

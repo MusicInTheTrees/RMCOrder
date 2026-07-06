@@ -1,4 +1,4 @@
-const { writeOrderToSheet, readOrderFromSheet } = require('../sheets/orderSheet');
+const { writeOrderToSheet, readOrderFromSheet, writeCustomersToSheet, EMAIL_STATES } = require('../sheets/orderSheet');
 
 // Mock the sheets client
 jest.mock('../sheets/client', () => ({
@@ -6,10 +6,17 @@ jest.mock('../sheets/client', () => ({
   writeRange: jest.fn(),
   clearRange: jest.fn(),
   addSheet: jest.fn(),
-  getSheetNames: jest.fn().mockResolvedValue(['Sheet1', 'Line Items', 'Designs']),
+  getSheetNames: jest.fn().mockResolvedValue(['Sheet1', 'Line Items', 'Designs', 'Customers']),
 }));
 
 const { readRange, writeRange, clearRange } = require('../sheets/client');
+
+beforeEach(() => {
+  jest.clearAllMocks();
+  writeRange.mockResolvedValue();
+  readRange.mockResolvedValue();
+  clearRange.mockResolvedValue();
+});
 
 test('writeOrderToSheet writes compact sizes and methods', async () => {
   clearRange.mockResolvedValue();
@@ -102,4 +109,67 @@ test('readOrderFromSheet reads legacy format with inventory', async () => {
   expect(order.lineItems[0].sizes.M.total).toBe(5);
   expect(order.lineItems[0].sizes.M.inventory).toBe(2);
   expect(order.lineItems[0].sizes.L.inventory).toBe(1);
+});
+
+test('EMAIL_STATES is the agreed set', () => {
+  expect(EMAIL_STATES).toEqual(['sent', 'fulfilled', 'received', 'shipped']);
+});
+
+test('writeOrderToSheet writes the Customers tab', async () => {
+  clearRange.mockResolvedValue();
+  writeRange.mockResolvedValue();
+  const order = {
+    orderId: 'RMC-002-2026-07-03', orderName: 'Drop', state: 'building',
+    created: '2026-07-03', notes: '', sheetId: 's', lineItems: [],
+    customers: [
+      { name: 'Jordan', email: 'jordan@x.com', emailed: { sent: '2026-07-03T00:00:00Z' } },
+      { name: '', email: 'sam@x.com', emailed: {} },
+    ],
+  };
+  await writeOrderToSheet('s', order);
+  const call = writeRange.mock.calls.find(c => c[1].includes('Customers'));
+  expect(call).toBeTruthy();
+  const rows = call[2];
+  expect(rows[0]).toEqual(['Name', 'Email', 'Sent: sent', 'Sent: fulfilled', 'Sent: received', 'Sent: shipped']);
+  expect(rows[1]).toEqual(['Jordan', 'jordan@x.com', '2026-07-03T00:00:00Z', '', '', '']);
+  expect(rows[2]).toEqual(['', 'sam@x.com', '', '', '', '']);
+});
+
+test('readOrderFromSheet reads the Customers tab', async () => {
+  readRange.mockImplementation((sheetId, range) => {
+    if (range.startsWith('Sheet1')) return Promise.resolve([
+      ['Order ID', 'RMC-002'], ['State', 'sent'], ['Sheet ID', 's'],
+    ]);
+    if (range.includes('Line Items')) return Promise.resolve([
+      ['#', 'Item Type', 'Color', 'Sizes', 'Front Method', 'Front Notes', 'Back Method', 'Back Notes', 'Item Type ID'],
+    ]);
+    if (range.startsWith('Designs')) return Promise.resolve([]);
+    if (range.startsWith('Customers')) return Promise.resolve([
+      ['Name', 'Email', 'Sent: sent', 'Sent: fulfilled', 'Sent: received', 'Sent: shipped'],
+      ['Jordan', 'jordan@x.com', '2026-07-03T00:00:00Z', '', '', ''],
+    ]);
+    return Promise.resolve([]);
+  });
+  const order = await readOrderFromSheet('s');
+  expect(order.customers).toEqual([
+    { name: 'Jordan', email: 'jordan@x.com', emailed: { sent: '2026-07-03T00:00:00Z', fulfilled: '', received: '', shipped: '' } },
+  ]);
+});
+
+test('readOrderFromSheet defaults customers to [] when tab missing', async () => {
+  readRange.mockImplementation((sheetId, range) => {
+    if (range.startsWith('Sheet1')) return Promise.resolve([['Order ID', 'RMC-003'], ['Sheet ID', 's']]);
+    if (range.includes('Line Items')) return Promise.resolve([['#', 'Item Type', 'Color', 'Sizes', 'Front Method', 'Front Notes', 'Back Method', 'Back Notes', 'Item Type ID']]);
+    return Promise.resolve([]); // Designs + Customers empty
+  });
+  const order = await readOrderFromSheet('s');
+  expect(order.customers).toEqual([]);
+});
+
+test('writeCustomersToSheet writes only the Customers tab', async () => {
+  clearRange.mockResolvedValue();
+  writeRange.mockResolvedValue();
+  await writeCustomersToSheet('s', [{ name: 'A', email: 'a@x.com', emailed: { shipped: '2026-07-03T00:00:00Z' } }]);
+  const call = writeRange.mock.calls.find(c => c[1].includes('Customers'));
+  expect(call[2][1]).toEqual(['A', 'a@x.com', '', '', '', '2026-07-03T00:00:00Z']);
 });

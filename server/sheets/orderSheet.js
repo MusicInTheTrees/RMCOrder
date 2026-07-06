@@ -1,5 +1,28 @@
 const { readRange, writeRange, clearRange, addSheet, getSheetNames } = require('./client');
 
+const EMAIL_STATES = ['sent', 'fulfilled', 'received', 'shipped'];
+const CUSTOMER_HEADER = ['Name', 'Email', ...EMAIL_STATES.map(s => `Sent: ${s}`)];
+
+function customersToRows(customers) {
+  const rows = [CUSTOMER_HEADER];
+  for (const c of customers || []) {
+    rows.push([c.name || '', c.email || '', ...EMAIL_STATES.map(s => (c.emailed && c.emailed[s]) || '')]);
+  }
+  return rows;
+}
+
+function rowsToCustomers(rows) {
+  const [, ...body] = rows || [];
+  const customers = [];
+  for (const row of body) {
+    if (!row || !row[1]) continue; // require an email
+    const emailed = {};
+    EMAIL_STATES.forEach((s, i) => { emailed[s] = row[2 + i] || ''; });
+    customers.push({ name: row[0] || '', email: row[1], emailed });
+  }
+  return customers;
+}
+
 function formatSizes(sizes) {
   return Object.entries(sizes || {})
     .filter(([, v]) => (v?.total ?? 0) > 0)
@@ -18,6 +41,12 @@ function parseSizes(str) {
   return sizes;
 }
 
+async function writeCustomersToSheet(sheetId, customers) {
+  await ensureSheets(sheetId);
+  await clearRange(sheetId, 'Customers!A1:Z1000');
+  await writeRange(sheetId, 'Customers!A1', customersToRows(customers), 'RAW');
+}
+
 async function initOrderSheet(sheetId, orderData) {
   await writeOrderToSheet(sheetId, orderData);
 }
@@ -26,6 +55,7 @@ async function ensureSheets(sheetId) {
   const existingNames = await getSheetNames(sheetId);
   if (!existingNames.includes('Line Items')) await addSheet(sheetId, 'Line Items');
   if (!existingNames.includes('Designs')) await addSheet(sheetId, 'Designs');
+  if (!existingNames.includes('Customers')) await addSheet(sheetId, 'Customers');
 }
 
 async function writeOrderToSheet(sheetId, orderData) {
@@ -74,6 +104,9 @@ async function writeOrderToSheet(sheetId, orderData) {
     for (const d of item.backDesigns || []) dRows.push([item.num, d.designNum, d.file, 'Back']);
   }
   await writeRange(sheetId, 'Designs!A1', dRows, 'RAW');
+
+  await clearRange(sheetId, 'Customers!A1:Z1000');
+  await writeRange(sheetId, 'Customers!A1', customersToRows(orderData.customers), 'RAW');
 }
 
 function isNewFormat(headerRow) {
@@ -143,6 +176,12 @@ async function readOrderFromSheet(sheetId) {
     }
   }
 
+  let customers = [];
+  try {
+    const custRows = await readRange(sheetId, 'Customers!A1:F1000');
+    customers = rowsToCustomers(custRows);
+  } catch { /* legacy order without Customers tab */ }
+
   return {
     orderId:     infoMap['Order ID']     || '',
     orderName:   infoMap['Order Name']   || '',
@@ -154,7 +193,8 @@ async function readOrderFromSheet(sheetId) {
     draftId:     infoMap['Draft ID']     || '',
     folderId:    infoMap['Folder ID']    || '',
     lineItems:   Object.values(lineItemsMap),
+    customers,
   };
 }
 
-module.exports = { initOrderSheet, writeOrderToSheet, readOrderFromSheet };
+module.exports = { initOrderSheet, writeOrderToSheet, readOrderFromSheet, writeCustomersToSheet, EMAIL_STATES };

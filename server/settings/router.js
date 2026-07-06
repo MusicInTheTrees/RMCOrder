@@ -9,8 +9,7 @@ const REPO_ROOT = path.join(__dirname, '..', '..');
 router.get('/', (_req, res) => res.json(readSettings()));
 
 router.put('/', (req, res) => {
-  const { brandName, spewEmail } = req.body;
-  writeSettings({ brandName, spewEmail });
+  writeSettings({ ...readSettings(), ...req.body });
   res.json({ ok: true });
 });
 

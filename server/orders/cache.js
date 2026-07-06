@@ -22,4 +22,18 @@ function deleteOrderCache(orderId) {
   if (fs.existsSync(p)) fs.unlinkSync(p);
 }
 
-module.exports = { writeOrderCache, readOrderCache, deleteOrderCache };
+function readAllOrderCaches() {
+  if (!fs.existsSync(config.ORDERS_CACHE_DIR)) return [];
+  const orders = [];
+  for (const file of fs.readdirSync(config.ORDERS_CACHE_DIR)) {
+    if (!file.endsWith('.json')) continue;
+    try {
+      orders.push(JSON.parse(fs.readFileSync(path.join(config.ORDERS_CACHE_DIR, file), 'utf8')));
+    } catch (err) {
+      console.warn(`Skipping unreadable order cache ${file}:`, err.message);
+    }
+  }
+  return orders;
+}
+
+module.exports = { writeOrderCache, readOrderCache, deleteOrderCache, readAllOrderCaches };

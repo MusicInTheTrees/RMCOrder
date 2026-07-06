@@ -6,6 +6,7 @@ import { useBugLog } from '../context/BugLogContext';
 import DesignPicker from './DesignPicker';
 import ItemsTab from './ItemsTab';
 import BugLogTab from './BugLogTab';
+import StatusEmailsTab from './StatusEmailsTab';
 import Toast from './Toast';
 
 export default function SettingsScreen() {
@@ -16,6 +17,7 @@ export default function SettingsScreen() {
     spewEmail: '',
     defaultBackDesign: '',
     defaultBackNotes: '',
+    autoSendCustomerEmails: false,
   });
   const [email, setEmail] = useState(null);
   const [toast, setToast] = useState(null);
@@ -70,6 +72,10 @@ export default function SettingsScreen() {
           className={`settings-tab${tab === 'items' ? ' active' : ''}`}
           onClick={() => setTab('items')}
         >Items</button>
+        <button
+          className={`settings-tab${tab === 'status' ? ' active' : ''}`}
+          onClick={() => setTab('status')}
+        >Status Emails</button>
         <button
           className={`settings-tab${tab === 'bugs' ? ' active' : ''}`}
           onClick={() => setTab('bugs')}
@@ -135,6 +141,7 @@ export default function SettingsScreen() {
       )}
 
       {tab === 'items' && <ItemsTab />}
+      {tab === 'status' && <StatusEmailsTab />}
       {tab === 'bugs' && <BugLogTab />}
 
       <Toast message={toast} onDismiss={() => setToast(null)} />

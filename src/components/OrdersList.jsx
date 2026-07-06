@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { listOrders, createOrder } from '../api/orders';
+import { listOrders, createOrder, deleteOrder } from '../api/orders';
 import StateBadge, { STATE_COLORS } from './StateBadge';
 
 export default function OrdersList() {
@@ -12,6 +12,20 @@ export default function OrdersList() {
   useEffect(() => {
     listOrders().then(setOrders).catch(console.error);
   }, []);
+
+  async function handleDeleteOrder(e, order) {
+    e.stopPropagation();
+    const label = order.orderName ? `${order.orderName} (${order.orderId})` : order.orderId;
+    if (!window.confirm(`Delete ${label}? This moves its Drive folder to the trash.`)) return;
+    setError(null);
+    try {
+      await deleteOrder(order.orderId);
+      setOrders(prev => prev.filter(o => o.orderId !== order.orderId));
+    } catch (err) {
+      console.error(err);
+      setError(err.message || 'Failed to delete order.');
+    }
+  }
 
   async function handleNewOrder() {
     setLoading(true);
@@ -53,6 +67,14 @@ export default function OrdersList() {
               {o.orderName && <span className="order-card-id">{o.orderId}</span>}
             </div>
             <StateBadge state={o.state || 'building'} />
+            <button
+              className="order-delete-btn"
+              title="Delete order"
+              aria-label={`Delete ${o.orderName || o.orderId}`}
+              onClick={(e) => handleDeleteOrder(e, o)}
+            >
+              🗑
+            </button>
           </div>
         ))}
       </div>

@@ -186,6 +186,24 @@ button:hover:not(:disabled) {
   opacity: 0.6;
 }
 
+.order-delete-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 15px;
+  line-height: 1;
+  padding: 6px;
+  margin-left: 8px;
+  border-radius: 6px;
+  opacity: 0.45;
+  transition: opacity 0.15s, background 0.15s;
+}
+
+.order-delete-btn:hover {
+  opacity: 1;
+  background: rgba(220, 38, 38, 0.1);
+}
+
 /* ===== Error Banner ===== */
 .error-banner {
   background: rgba(220, 38, 38, 0.07);
@@ -911,6 +929,18 @@ textarea:focus {
   opacity: 0.6;
 }
 
+.load-error {
+  flex-direction: column;
+  gap: 12px;
+  opacity: 1;
+  text-align: center;
+}
+
+.load-error-actions {
+  display: flex;
+  gap: 10px;
+}
+
 /* ===== Settings Tabs ===== */
 .settings-tabs {
   display: flex;
@@ -1236,6 +1266,37 @@ textarea:focus {
   border-top: 1px solid var(--border);
 }
 
+.back-to-top-fab {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 100;
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  background: var(--accent);
+  color: #fff;
+  font-size: 22px;
+  line-height: 1;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+  opacity: 0;
+  transform: translateY(12px);
+  pointer-events: none;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.back-to-top-fab.visible {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+
+.back-to-top-fab:hover {
+  filter: brightness(1.08);
+}
+
 .email-preview {
   font-family: monospace;
   font-size: 13px;
@@ -1266,3 +1327,95 @@ textarea:focus {
   font-style: italic;
   margin: 4px 0;
 }
+
+/* Customer emails */
+.order-tabs { display: flex; gap: 8px; margin: 12px 0; }
+.order-tab { padding: 8px 16px; border: 1px solid #ccc; background: #f5f5f5; border-radius: 6px 6px 0 0; cursor: pointer; }
+.order-tab.active { background: #22402f; color: #fff; border-color: #22402f; }
+
+.customers-panel { padding: 12px 0; }
+.customers-actions { display: flex; gap: 8px; margin-bottom: 12px; }
+.customers-paste textarea { width: 100%; min-height: 90px; margin-bottom: 8px; }
+.customers-skipped { color: #b45309; font-size: 0.85em; }
+.customers-table { width: 100%; border-collapse: collapse; margin-bottom: 16px; }
+.customers-table th, .customers-table td { text-align: left; padding: 4px 6px; }
+.customers-table input { width: 100%; }
+.btn-remove { color: #b91c1c; background: none; border: none; cursor: pointer; }
+.customers-send-row { display: flex; align-items: center; gap: 12px; margin-bottom: 6px; }
+.customers-pending { color: #666; font-size: 0.85em; }
+
+.modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.45); display: flex; align-items: center; justify-content: center; z-index: 100; }
+.customer-email-modal { background: #fff; border-radius: 10px; padding: 20px; width: min(560px, 92vw); max-height: 88vh; overflow-y: auto; }
+.modal-label { display: block; font-weight: 600; margin: 12px 0 4px; }
+.modal-input, .modal-textarea { width: 100%; }
+.modal-recipients { display: flex; flex-direction: column; gap: 4px; max-height: 180px; overflow-y: auto; }
+.modal-recipient { display: flex; align-items: center; gap: 6px; }
+.modal-error { color: #b91c1c; }
+.modal-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 16px; }
+
+/* Customers panel (v2) */
+.customers-heading { margin: 4px 0 12px; }
+.add-customer-form { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-bottom: 12px; }
+.add-customer-form input { padding: 6px 8px; box-sizing: border-box; }
+.add-customer-name { min-width: 160px; }
+.add-customer-email { min-width: 240px; }
+.customers-paste { margin-bottom: 12px; }
+.customers-paste-input {
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+  min-height: 90px;
+  background: #fff;
+  color: #222;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  padding: 8px;
+  margin-bottom: 8px;
+}
+.customers-empty, .customers-hint { color: #666; font-size: 0.9em; }
+.customers-preview { margin: 20px auto 0; max-width: 540px; text-align: center; }
+.preview-subject { font-size: 0.9em; color: #333; margin: 6px 0; }
+.email-preview-frame {
+  display: block;
+  margin: 0 auto;
+  width: 100%;
+  max-width: 520px;
+  height: 500px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  background: #fff;
+}
+.customers-send-controls {
+  display: flex;
+  flex-direction: column;
+  align-items: center;          /* centered on the page */
+  gap: 56px;                    /* twice the previous spacing between button and checkbox */
+  margin-top: 24px;
+  text-align: center;
+}
+.draft-msg { color: #333; font-size: 0.9em; }
+.auto-send-toggle { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 4px; }
+.auto-send-row { display: flex; align-items: center; gap: 6px; font-weight: 600; }
+.auto-send-note { color: #666; font-size: 0.8em; font-weight: 400; }
+
+/* Status Emails settings tab */
+.status-emails-hint { color: #555; font-size: 0.9em; }
+.status-emails-tab code { background: #eee; padding: 1px 5px; border-radius: 3px; }
+.status-email-block { margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px solid #eee; }
+
+.placeholder-help {
+  background: #fbe9dd;
+  border: 1px solid #e07a3f;
+  border-left: 5px solid #e07a3f;
+  border-radius: 6px;
+  padding: 10px 14px;
+  margin-bottom: 16px;
+  font-size: 0.9em;
+  color: #5a3a28;
+}
+.placeholder-help-title { font-weight: 700; margin-bottom: 6px; }
+.placeholder-help > div { margin: 3px 0; }
+.placeholder-help code { background: #fff; border: 1px solid #e0c3b0; padding: 1px 5px; border-radius: 3px; }
+
+/* All text-entry boxes get a white background */
+input, textarea, select { background-color: #fff; color: #222; }

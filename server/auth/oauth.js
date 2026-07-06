@@ -31,6 +31,12 @@ function getOAuth2Client() {
   const client = createOAuth2Client();
   const tokens = loadTokens();
   if (tokens) client.setCredentials(tokens);
+  // Persist tokens whenever googleapis refreshes them. A refresh response often
+  // omits refresh_token, so merge onto the stored set to avoid dropping it.
+  client.on('tokens', (newTokens) => {
+    const existing = loadTokens() || {};
+    saveTokens({ ...existing, ...newTokens });
+  });
   return client;
 }
 

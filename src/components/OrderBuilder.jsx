@@ -3,7 +3,7 @@ import { useParams, useSearchParams, useNavigate } from 'react-router-dom';
 import { useOrder } from '../hooks/useOrder';
 import { useItems } from '../hooks/useItems';
 import { upsertDraft } from '../api/gmail';
-import { getSettings } from '../api/settings';
+import { getSettings, saveSettings } from '../api/settings';
 import { decrementInventory, incrementInventory } from '../api/inventory';
 import { useBugLog } from '../context/BugLogContext';
 import { useInventory } from '../hooks/useInventory';
@@ -12,6 +12,9 @@ import LineItemCard from './LineItemCard';
 import DesignBrowser from './DesignBrowser';
 import OfflineBanner from './OfflineBanner';
 import Toast from './Toast';
+import CustomersPanel from './CustomersPanel';
+import { EMAIL_STATES } from '../emailStates';
+import { sendCustomerEmail } from '../api/customerEmails';
 
 function nextLineItemNum(lineItems) {
   const max = lineItems.reduce((m, li) => Math.max(m, parseInt(li.num, 10) || 0), 0);
@@ -23,7 +26,7 @@ export default function OrderBuilder() {
   const [searchParams] = useSearchParams();
   const sheetId = searchParams.get('sheetId');
   const navigate = useNavigate();
-  const { order, setOrder, saving, offline, syncPending, saveNow } = useOrder(sheetId, {
+  const { order, setOrder, saving, offline, syncPending, saveNow, loadError, reload } = useOrder(sheetId, {
     onError: (msg) => {
       const err = `Save failed: ${msg}`;
       setToast(err);
@@ -37,11 +40,46 @@ export default function OrderBuilder() {
   const [toast, setToast] = useState(null);
   const [saveMsg, setSaveMsg] = useState(null);
   const [previewText, setPreviewText] = useState(null);
-  const settingsRef = useRef({ defaultBackDesign: '', defaultBackNotes: '' });
+  const [showBackToTop, setShowBackToTop] = useState(false);
+  const [activeTab, setActiveTab] = useState('order');
+  const [autoSend, setAutoSend] = useState(false);
+  const settingsRef = useRef({ defaultBackDesign: '', defaultBackNotes: '', autoSendCustomerEmails: false });
 
   useEffect(() => {
-    getSettings().then(s => { settingsRef.current = s; }).catch(() => {});
+    getSettings().then(s => { settingsRef.current = s; setAutoSend(!!s.autoSendCustomerEmails); }).catch(() => {});
   }, []);
+
+  async function handleToggleAutoSend(next) {
+    setAutoSend(next);
+    const updated = { ...settingsRef.current, autoSendCustomerEmails: next };
+    settingsRef.current = updated;
+    try {
+      await saveSettings(updated);
+    } catch (err) {
+      logError(`Could not save auto-send setting: ${err.message}`);
+    }
+  }
+
+  useEffect(() => {
+    const onScroll = () => setShowBackToTop(window.scrollY > 400);
+    onScroll();
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
+
+  if (loadError) {
+    const isAuth = /auth|401|invalid_grant|credential|token/i.test(loadError);
+    return (
+      <div className="loading load-error">
+        <p>Couldn't load this order: {loadError}</p>
+        {isAuth && <p>Your Google session may have expired — try signing in again.</p>}
+        <div className="load-error-actions">
+          <button className="btn-primary" onClick={reload}>Retry</button>
+          <button className="btn-secondary" onClick={() => navigate('/orders')}>← Back to Orders</button>
+        </div>
+      </div>
+    );
+  }
 
   if (!order) return <div className="loading">Loading order...</div>;
 
@@ -70,6 +108,18 @@ export default function OrderBuilder() {
     setOrder(prev => ({
       ...prev,
       lineItems: prev.lineItems.map(li => li.num === num ? updated : li),
+    }));
+  }
+
+  function setCustomers(next) {
+    setOrder(prev => ({ ...prev, customers: next }));
+  }
+
+  function stampEmailed(state, emails, at) {
+    setOrder(prev => ({
+      ...prev,
+      customers: (prev.customers || []).map(c =>
+        emails.includes(c.email) ? { ...c, emailed: { ...(c.emailed || {}), [state]: at } } : c),
     }));
   }
 
@@ -216,6 +266,24 @@ export default function OrderBuilder() {
     }
 
     setOrder(prev => ({ ...prev, state: nextState }));
+
+    if (EMAIL_STATES.includes(nextState) && autoSend) {
+      const pending = (order.customers || []).filter(c => !(c.emailed && c.emailed[nextState]));
+      if (pending.length > 0) {
+        try {
+          const res = await sendCustomerEmail(sheetId, nextState, pending.map(c => ({ name: c.name, email: c.email })));
+          stampEmailed(nextState, res.emails, res.at);
+          setToast(`Sent ${res.sent} ${nextState} email(s)`);
+        } catch (err) {
+          logError(`Auto-send failed: ${err.message}`);
+        }
+      }
+    }
+  }
+
+  // Moving backward is a manual correction — no inventory changes, no emails.
+  function handleRegressState(prevState) {
+    setOrder(prev => ({ ...prev, state: prevState }));
   }
 
   return (
@@ -227,10 +295,17 @@ export default function OrderBuilder() {
         order={order}
         saving={saving}
         onAdvanceState={handleAdvanceState}
+        onRegressState={handleRegressState}
         onGenerateDraft={handleGenerateDraft}
         onNameChange={name => setOrder(prev => ({ ...prev, orderName: name }))}
       />
 
+      <div className="order-tabs">
+        <button className={`order-tab${activeTab === 'order' ? ' active' : ''}`} onClick={() => setActiveTab('order')}>Order</button>
+        <button className={`order-tab${activeTab === 'customers' ? ' active' : ''}`} onClick={() => setActiveTab('customers')}>Customers</button>
+      </div>
+
+      {activeTab === 'order' && (<>
       <div className="order-notes-section">
         <div className="field-section-header">Global Notes</div>
         <textarea
@@ -289,6 +364,27 @@ export default function OrderBuilder() {
           <pre className="email-preview">{previewText}</pre>
         )}
       </div>
+      </>)}
+
+      {activeTab === 'customers' && (
+        <CustomersPanel
+          customers={order.customers || []}
+          onChange={setCustomers}
+          sheetId={sheetId}
+          orderState={order.state}
+          autoSend={autoSend}
+          onToggleAutoSend={handleToggleAutoSend}
+        />
+      )}
+
+      <button
+        className={`back-to-top-fab${showBackToTop ? ' visible' : ''}`}
+        onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+        aria-label="Back to top"
+        title="Back to top"
+      >
+        ↑
+      </button>
 
       <Toast message={toast} onDismiss={() => setToast(null)} />
     </div>

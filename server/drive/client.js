@@ -90,6 +90,20 @@ async function uploadFileContent(name, content, parentId) {
   return res.data.id;
 }
 
+async function shareFileWithUser(fileId, email, role = 'reader') {
+  const drive = getDrive();
+  await drive.permissions.create({
+    fileId,
+    sendNotificationEmail: false,
+    requestBody: { type: 'user', role, emailAddress: email },
+  });
+}
+
+async function trashFile(fileId) {
+  const drive = getDrive();
+  await drive.files.update({ fileId, requestBody: { trashed: true } });
+}
+
 async function downloadFileContent(fileId) {
   const drive = getDrive();
   const chunks = [];
@@ -112,4 +126,6 @@ module.exports = {
   findFileByName,
   uploadFileContent,
   downloadFileContent,
+  shareFileWithUser,
+  trashFile,
 };

@@ -4,6 +4,7 @@ import { useOfflineQueue } from './useOfflineQueue';
 
 export function useOrder(sheetId, { onError } = {}) {
   const [order, setOrderState] = useState(null);
+  const [loadError, setLoadError] = useState(null);
   const [saving, setSaving] = useState(false);
   const [syncPending, setSyncPending] = useState(false);
   const [fromCache, setFromCache] = useState(false);
@@ -11,13 +12,19 @@ export function useOrder(sheetId, { onError } = {}) {
   const pendingDataRef = useRef(null);
   const saveTimerRef = useRef(null);
 
-  useEffect(() => {
+  const loadOrder = useCallback(() => {
     if (!sheetId) return;
+    setLoadError(null);
     getOrderBySheet(sheetId).then(data => {
       setOrderState(data);
       if (data._fromCache) setFromCache(true);
-    }).catch(console.error);
+    }).catch(err => {
+      console.error(err);
+      setLoadError(err?.message || 'Failed to load order');
+    });
   }, [sheetId]);
+
+  useEffect(() => { loadOrder(); }, [loadOrder]);
 
   const doSave = useCallback((data, { full = false } = {}) => {
     setSaving(true);
@@ -53,5 +60,5 @@ export function useOrder(sheetId, { onError } = {}) {
     return Promise.resolve({ skipped: true });
   }, [doSave]);
 
-  return { order, setOrder, saving, offline: !online, syncPending, fromCache, saveNow };
+  return { order, setOrder, saving, offline: !online, syncPending, fromCache, saveNow, loadError, reload: loadOrder };
 }

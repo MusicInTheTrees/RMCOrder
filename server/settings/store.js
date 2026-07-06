@@ -6,6 +6,7 @@ const DEFAULTS = {
   spewEmail: '',
   defaultBackDesign: '',
   defaultBackNotes: '',
+  autoSendCustomerEmails: false,
 };
 
 function readSettings() {
