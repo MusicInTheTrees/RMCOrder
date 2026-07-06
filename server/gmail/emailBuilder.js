@@ -1,14 +1,9 @@
+const { compileLineItems } = require('./compileLineItems');
+
 function formatSizes(sizes) {
   return Object.entries(sizes || {})
     .filter(([, v]) => (v?.total ?? 0) > 0)
-    .map(([label, v]) => {
-      const total   = v.total;
-      const inv     = v.inventory ?? 0;
-      const toOrder = total - inv;
-      if (inv > 0 && toOrder > 0) return `${label}: ${total} (${inv} from stock, order ${toOrder})`;
-      if (inv === total)           return `${label}: ${total} (all from stock)`;
-      return `${label}: ${total}`;
-    })
+    .map(([label, v]) => `${label}×${v.total}`)
     .join(', ');
 }
 
@@ -28,8 +23,9 @@ function groupByCategory(lineItems) {
 
 function buildEmailHtml(orderData, _settings, catalogByName = {}) {
   const allItems = orderData.lineItems || [];
-  const groups = groupByCategory(allItems.filter(i => !isBlank(i)));
-  const blankItems = allItems.filter(isBlank);
+  const printItems = compileLineItems(allItems.filter(i => !isBlank(i)));
+  const groups = groupByCategory(printItems);
+  const blankItems = compileLineItems(allItems.filter(isBlank));
   const title = orderData.orderName
     ? `RMC Order: ${orderData.orderName} (${orderData.orderId})`
     : `${orderData.orderId} — Order Request`;
@@ -52,7 +48,7 @@ function buildEmailHtml(orderData, _settings, catalogByName = {}) {
       const frontList = (item.frontDesigns || []).map(d => d.file).join('<br>') || '—';
       const backList  = (item.backDesigns  || []).map(d => d.file).join('<br>') || '—';
       html += `<tr>
-        <td>${item.num}</td>
+        <td>${item.nums.join(', ')}</td>
         <td>${item.color || '—'}</td>
         <td>${formatSizes(item.sizes)}</td>
         <td>${item.frontMethod || '—'}</td>
@@ -72,7 +68,7 @@ function buildEmailHtml(orderData, _settings, catalogByName = {}) {
     html += '<tr><th>#</th><th>Item Type</th><th>Color</th><th>Sizes</th></tr>';
     for (const item of blankItems) {
       html += `<tr>
-        <td>${item.num}</td>
+        <td>${item.nums.join(', ')}</td>
         <td>${item.itemTypeName || item.apparelType || '—'}</td>
         <td>${item.color || '—'}</td>
         <td>${formatSizes(item.sizes)}</td>
@@ -95,8 +91,9 @@ function buildEmailHtml(orderData, _settings, catalogByName = {}) {
 
 function buildEmailPlainText(orderData, _settings, catalogByName = {}) {
   const allItems = orderData.lineItems || [];
-  const groups = groupByCategory(allItems.filter(i => !isBlank(i)));
-  const blankItems = allItems.filter(isBlank);
+  const printItems = compileLineItems(allItems.filter(i => !isBlank(i)));
+  const groups = groupByCategory(printItems);
+  const blankItems = compileLineItems(allItems.filter(isBlank));
   const title = orderData.orderName
     ? `RMC Order: ${orderData.orderName} (${orderData.orderId})`
     : `${orderData.orderId} — Order Request`;
@@ -109,7 +106,7 @@ function buildEmailPlainText(orderData, _settings, catalogByName = {}) {
     const catalogItem = catalogByName[(category || '').toLowerCase()];
     if (catalogItem?.publicNotes) text += `Note: ${catalogItem.publicNotes}\n`;
     for (const item of items) {
-      text += `• #${item.num} | ${item.color || ''} | ${formatSizes(item.sizes)}\n`;
+      text += `• #${item.nums.join(', ')} | ${item.color || ''} | ${formatSizes(item.sizes)}\n`;
       const frontList = (item.frontDesigns || []).map(d => `  ${d.file}`).join('\n');
       if (item.frontMethod) text += `  Front method: ${item.frontMethod}\n`;
       if (frontList) text += `  Front:\n${frontList}\n`;
@@ -124,7 +121,7 @@ function buildEmailPlainText(orderData, _settings, catalogByName = {}) {
   if (blankItems.length > 0) {
     text += `Blank Items (no decoration)\n${'—'.repeat(26)}\n`;
     for (const item of blankItems) {
-      text += `• #${item.num} | ${item.itemTypeName || item.apparelType || ''} | ${item.color || ''} | ${formatSizes(item.sizes)}\n`;
+      text += `• #${item.nums.join(', ')} | ${item.itemTypeName || item.apparelType || ''} | ${item.color || ''} | ${formatSizes(item.sizes)}\n`;
     }
     text += '\n';
   }
