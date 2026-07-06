@@ -57,9 +57,10 @@ Related changes to the order → customer-email workflow:
 - The customer-email routes (`preview`, `draft`, `send` in `server/gmail/router.js`)
   already load the full order. For each recipient, filter
   `order.lineItems.filter(li => li.customerEmail === recipient.email)` and pass as `items`.
-- Preview uses the generic name and **no** items list (there is no specific recipient),
-  so the preview shows body + status only, matching prior behavior. (Per-recipient item
-  descriptions appear in real drafts/sends.)
+- Preview uses the generic name and a **sample** items list so the "Your items" section
+  is visible on screen: the linked items of the first customer who has any linked items;
+  if no line items are linked to anyone, fall back to the first 1–2 line items as a
+  representative example. Real drafts/sends still use each recipient's own linked items.
 
 ## 2. Printer-order compilation (merge identical line items)
 
@@ -113,7 +114,9 @@ Blank items (no front and no back designs) merge on the same signature rules
   - Plus a chooser (buttons) to move to any other state instead.
   - On confirm: set `state` to the chosen state, clear `delayedFrom`. Leaving Delayed is
     treated as a manual correction (like Move-back): **no** inventory changes and **no**
-    auto-email for the destination state.
+    auto-email for the destination state. Customer emails fire only on *entering* Delayed
+    or on advancing through the natural linear progression into an email state
+    (Sent/Shipped) — never on leaving Delayed.
 - **Persistence:** `delayedFrom` stored on `Sheet1` as a new "Delayed From" info row and
   read back in `readOrderFromSheet` (defaults to `''`).
 
