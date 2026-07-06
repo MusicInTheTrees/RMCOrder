@@ -3,7 +3,14 @@ const { compileLineItems } = require('./compileLineItems');
 function formatSizes(sizes) {
   return Object.entries(sizes || {})
     .filter(([, v]) => (v?.total ?? 0) > 0)
-    .map(([label, v]) => `${label}×${v.total}`)
+    .map(([label, v]) => {
+      const total   = v.total;
+      const inv     = v.inventory ?? 0;
+      const toOrder = total - inv;
+      if (inv > 0 && toOrder > 0) return `${label}: ${total} (${inv} from stock, order ${toOrder})`;
+      if (inv === total)           return `${label}: ${total} (all from stock)`;
+      return `${label}: ${total}`;
+    })
     .join(', ');
 }
 
