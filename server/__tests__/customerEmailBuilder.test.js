@@ -63,3 +63,34 @@ test('headerImage returns a jpeg Buffer with the agreed cid', () => {
   expect(Buffer.isBuffer(att.content)).toBe(true);
   expect(att.content.length).toBeGreaterThan(0);
 });
+
+test('buildCustomerEmail renders Your items with front design only', () => {
+  const items = [{ itemTypeName: 'Tank', color: 'Gray',
+    frontDesigns: [{ designNum: '1', file: 'BlueNeon' }], backDesigns: [{ designNum: '1', file: 'SecretBack' }],
+    sizes: { M: { total: 2, inventory: 0 }, L: { total: 1, inventory: 0 } } }];
+  const { html, plain } = buildCustomerEmail({
+    state: 'sent', template: DEFAULT_TEMPLATES.sent, customerName: 'Jane',
+    genericName: 'G', orderName: 'O', items,
+  });
+  expect(html).toContain('Your items');
+  expect(html).toContain('Tank');
+  expect(html).toContain('Gray');
+  expect(html).toContain('M×2, L×1');
+  expect(html).toContain('BlueNeon');
+  expect(html).not.toContain('SecretBack'); // back design omitted
+  expect(plain).toContain('BlueNeon');
+});
+
+test('buildCustomerEmail shows blank (no print) for undecorated item', () => {
+  const items = [{ itemTypeName: 'Tank', color: 'Gray', frontDesigns: [], backDesigns: [],
+    sizes: { M: { total: 1, inventory: 0 } } }];
+  const { html } = buildCustomerEmail({ state: 'sent', template: DEFAULT_TEMPLATES.sent,
+    customerName: 'Jane', genericName: 'G', orderName: 'O', items });
+  expect(html).toContain('blank (no print)');
+});
+
+test('buildCustomerEmail omits Your items when none', () => {
+  const { html } = buildCustomerEmail({ state: 'sent', template: DEFAULT_TEMPLATES.sent,
+    customerName: 'Jane', genericName: 'G', orderName: 'O', items: [] });
+  expect(html).not.toContain('Your items');
+});

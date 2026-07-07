@@ -7,6 +7,7 @@ const { readCatalog } = require('../items/store');
 const { buildEmailHtml, buildEmailPlainText } = require('./emailBuilder');
 const { upsertDraft, sendEmail, createDraft } = require('./client');
 const { buildCustomerEmail, headerImage } = require('./customerEmailBuilder');
+const { itemsForCustomer, sampleItems } = require('./customerItems');
 const { readStatusEmails, writeStatusEmails } = require('./statusEmailStore');
 const { listFiles, findFileByName, findFolderByName, copyFile, shareFileWithUser, uploadFileContent } = require('../drive/client');
 const { readRange } = require('../sheets/client');
@@ -148,6 +149,7 @@ router.post('/customer-email/preview', async (req, res) => {
     const { subject, html } = buildCustomerEmail({
       state, template: templates[state], customerName: '',
       genericName: genericCustomerName, orderName: order.orderName,
+      items: sampleItems(order.lineItems),
       imageSrc: '/api/assets/email_header.jpg', // browser-loadable for the on-screen preview
     });
     res.json({ subject, html });
@@ -172,6 +174,7 @@ router.post('/customer-email/draft', async (req, res) => {
       const { subject, html, plain } = buildCustomerEmail({
         state, template: templates[state], customerName: c.name,
         genericName: genericCustomerName, orderName: order.orderName,
+        items: itemsForCustomer(order.lineItems, c.email),
       });
       await createDraft(c.email, subject, html, plain, [attachment]);
       drafted++;
@@ -199,6 +202,7 @@ router.post('/customer-email/send', async (req, res) => {
       const { subject, html, plain } = buildCustomerEmail({
         state, template: templates[state], customerName: r.name,
         genericName: genericCustomerName, orderName: order.orderName,
+        items: itemsForCustomer(order.lineItems, r.email),
       });
       await sendEmail(r.email, subject, html, plain, [attachment]);
       emails.push(r.email);
