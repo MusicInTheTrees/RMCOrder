@@ -8,7 +8,7 @@ vi.mock('../api/client', () => ({ apiFetch: vi.fn().mockResolvedValue({}) }));
 beforeEach(() => vi.clearAllMocks());
 
 test('EMAIL_STATES is the agreed set', () => {
-  expect(EMAIL_STATES).toEqual(['sent', 'fulfilled', 'received', 'shipped']);
+  expect(EMAIL_STATES).toEqual(['sent', 'shipped', 'delayed']);
 });
 
 test('previewCustomerEmail POSTs sheetId + state', () => {

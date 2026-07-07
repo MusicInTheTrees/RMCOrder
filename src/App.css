@@ -1419,3 +1419,16 @@ textarea:focus {
 
 /* All text-entry boxes get a white background */
 input, textarea, select { background-color: #fff; color: #222; }
+
+/* Delayed side-state controls */
+.line-item-customer { margin-left: auto; margin-right: 10px; max-width: 220px; }
+.delayed-btn { background: #f59e0b; color: #1f2937; }
+.delayed-exit-backdrop {
+  position: fixed; inset: 0; background: rgba(0,0,0,0.4);
+  display: flex; align-items: center; justify-content: center; z-index: 1000;
+}
+.delayed-exit-dialog {
+  background: #fff; border-radius: 12px; padding: 20px; max-width: 420px;
+  display: flex; flex-direction: column; gap: 10px;
+}
+.delayed-exit-others { display: flex; flex-wrap: wrap; gap: 6px; }

@@ -19,10 +19,10 @@ describe('parseCustomers', () => {
     expect(rows).toHaveLength(2);
     expect(rows[0]).toEqual({ name: 'Jordan', email: 'jordan@x.com' });
   });
-  test('reports lines with no valid email as skipped', () => {
+  test('reports lines with no valid email as skipped with a reason', () => {
     const { rows, skipped } = parseCustomers('not an email\nJordan, jordan@x.com');
     expect(rows).toHaveLength(1);
-    expect(skipped).toEqual(['not an email']);
+    expect(skipped).toEqual([{ line: 'not an email', reason: 'no email address found' }]);
   });
   test('ignores empty lines', () => {
     const { rows } = parseCustomers('\n\njordan@x.com\n');

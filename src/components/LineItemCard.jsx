@@ -2,7 +2,7 @@ import { useState } from 'react';
 import SizeButtons from './SizeButtons';
 import ConfirmDialog from './ConfirmDialog';
 
-export default function LineItemCard({ item, items = [], onChange, onRemove, onAddDesign, getStock = null }) {
+export default function LineItemCard({ item, items = [], onChange, onRemove, onAddDesign, getStock = null, customers = [] }) {
   const [confirmRemove, setConfirmRemove] = useState(false);
 
   const selectedCatalogItem = items.find(i => i.id === item.itemTypeId) || null;
@@ -64,6 +64,22 @@ export default function LineItemCard({ item, items = [], onChange, onRemove, onA
     <div className="line-item-card">
       <div className="line-item-header">
         <span className="line-item-num">#{item.num}</span>
+        <select
+          className="line-item-customer"
+          aria-label="Customer"
+          value={item.customerEmail || ''}
+          disabled={customers.length === 0}
+          onChange={e => update('customerEmail', e.target.value)}
+        >
+          {customers.length === 0
+            ? <option value="">Add customers on the Customers tab first</option>
+            : <>
+                <option value="">— No customer —</option>
+                {customers.map(c => (
+                  <option key={c.email} value={c.email}>{c.name ? `${c.name} (${c.email})` : c.email}</option>
+                ))}
+              </>}
+        </select>
         <button className="btn-danger" onClick={() => setConfirmRemove(true)}>Remove</button>
       </div>
 

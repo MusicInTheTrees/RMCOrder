@@ -4,13 +4,18 @@ import ConfirmDialog from './ConfirmDialog';
 
 const STATE_ORDER = ['building', 'sent', 'pending', 'paid', 'fulfilled', 'received', 'shipped'];
 
-export default function OrderTopBar({ order, onAdvanceState, onRegressState, onGenerateDraft, saving, onNameChange }) {
+export default function OrderTopBar({ order, onAdvanceState, onRegressState, onGenerateDraft, saving, onNameChange, onEnterDelayed, onExitDelayed }) {
   const [confirmState, setConfirmState] = useState(false);
   const [confirmRegress, setConfirmRegress] = useState(false);
   const [confirmDraft, setConfirmDraft] = useState(false);
+  const [confirmDelayed, setConfirmDelayed] = useState(false);
+  const [exitOpen, setExitOpen] = useState(false);
 
+  const isDelayed = order?.state === 'delayed';
   const nextState = STATE_ORDER[STATE_ORDER.indexOf(order?.state) + 1];
   const prevState = STATE_ORDER[STATE_ORDER.indexOf(order?.state) - 1];
+  const delayedFrom = order?.delayedFrom || 'sent';
+  const otherStates = STATE_ORDER.filter(s => s !== delayedFrom);
 
   return (
     <div className="order-top-bar">
@@ -49,27 +54,57 @@ export default function OrderTopBar({ order, onAdvanceState, onRegressState, onG
       {saving && <span className="saving-indicator">Saving...</span>}
 
       <div className="order-state-controls">
-        {prevState && (
-          <button className="move-to-btn move-back-btn" onClick={() => setConfirmRegress(true)}>
-            ← Move back
-          </button>
-        )}
-        <div className="order-state-current">
-          <span className="order-state-label">Current State</span>
-          <StateBadge state={order?.state} />
-        </div>
-        {nextState && (
+        {isDelayed ? (
           <>
-            <button className="move-to-btn" onClick={() => setConfirmState(true)}>
-              Move to →
-            </button>
-            <div className="order-state-next">
-              <span className="order-state-label">Next State</span>
-              <StateBadge state={nextState} dimmed />
+            <div className="order-state-current">
+              <span className="order-state-label">Current State</span>
+              <StateBadge state="delayed" />
             </div>
+            <button className="move-to-btn" onClick={() => setExitOpen(true)}>Move out of Delayed</button>
+          </>
+        ) : (
+          <>
+            {prevState && (
+              <button className="move-to-btn move-back-btn" onClick={() => setConfirmRegress(true)}>
+                ← Move back
+              </button>
+            )}
+            <div className="order-state-current">
+              <span className="order-state-label">Current State</span>
+              <StateBadge state={order?.state} />
+            </div>
+            {nextState && (
+              <>
+                <button className="move-to-btn" onClick={() => setConfirmState(true)}>
+                  Move to →
+                </button>
+                <div className="order-state-next">
+                  <span className="order-state-label">Next State</span>
+                  <StateBadge state={nextState} dimmed />
+                </div>
+              </>
+            )}
+            <button className="move-to-btn delayed-btn" onClick={() => setConfirmDelayed(true)}>Mark Delayed</button>
           </>
         )}
       </div>
+
+      {exitOpen && (
+        <div className="delayed-exit-backdrop" role="dialog">
+          <div className="delayed-exit-dialog">
+            <p>Move out of Delayed — which state?</p>
+            <button className="btn-primary" onClick={() => { setExitOpen(false); onExitDelayed(delayedFrom); }}>
+              Return to “{delayedFrom}”
+            </button>
+            <div className="delayed-exit-others">
+              {otherStates.map(s => (
+                <button key={s} className="btn-secondary" onClick={() => { setExitOpen(false); onExitDelayed(s); }}>{s}</button>
+              ))}
+            </div>
+            <button className="btn-secondary" onClick={() => setExitOpen(false)}>Cancel</button>
+          </div>
+        </div>
+      )}
 
       <ConfirmDialog
         message={confirmState ? `Move order to "${nextState}"?` : null}
@@ -85,6 +120,11 @@ export default function OrderTopBar({ order, onAdvanceState, onRegressState, onG
         message={confirmDraft ? 'Create Gmail draft for this order?' : null}
         onConfirm={() => { setConfirmDraft(false); onGenerateDraft(); }}
         onCancel={() => setConfirmDraft(false)}
+      />
+      <ConfirmDialog
+        message={confirmDelayed ? 'Mark this order as Delayed? Customers will be notified if auto-send is on.' : null}
+        onConfirm={() => { setConfirmDelayed(false); onEnterDelayed(); }}
+        onCancel={() => setConfirmDelayed(false)}
       />
     </div>
   );
