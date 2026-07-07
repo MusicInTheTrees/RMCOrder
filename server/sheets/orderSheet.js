@@ -60,8 +60,8 @@ async function ensureSheets(sheetId) {
 
 async function writeOrderToSheet(sheetId, orderData) {
   await ensureSheets(sheetId);
-  await clearRange(sheetId, 'Sheet1!A1:B10');
-  await writeRange(sheetId, 'Sheet1!A1:B9', [
+  await clearRange(sheetId, 'Sheet1!A1:B11');
+  await writeRange(sheetId, 'Sheet1!A1:B10', [
     ['Order ID',     orderData.orderId],
     ['Order Name',   orderData.orderName || ''],
     ['State',        orderData.state],
@@ -71,10 +71,11 @@ async function writeOrderToSheet(sheetId, orderData) {
     ['Sheet ID',     orderData.sheetId || ''],
     ['Draft ID',     orderData.draftId || ''],
     ['Folder ID',    orderData.folderId || ''],
+    ['Delayed From', orderData.delayedFrom || ''],
   ]);
 
   await clearRange(sheetId, "'Line Items'!A1:Z1000");
-  const liHeader = ['#', 'Item Type', 'Color', 'Sizes', 'Front Method', 'Front Notes', 'Back Method', 'Back Notes', 'Item Type ID'];
+  const liHeader = ['#', 'Item Type', 'Color', 'Sizes', 'Front Method', 'Front Notes', 'Back Method', 'Back Notes', 'Item Type ID', 'Customer Email'];
   const liRows = [liHeader];
   for (const item of orderData.lineItems || []) {
     const invSizes = Object.entries(item.sizes || {}).filter(([, v]) => (v?.inventory ?? 0) > 0);
@@ -88,6 +89,7 @@ async function writeOrderToSheet(sheetId, orderData) {
       item.backMethod || '',
       item.backNotes || '',
       item.itemTypeId || '',
+      item.customerEmail || '',
     ]);
     if (invSizes.length > 0) {
       const invStr = invSizes.map(([label, v]) => `${label}×${v.inventory}`).join(', ');
@@ -114,7 +116,7 @@ function isNewFormat(headerRow) {
 }
 
 async function readOrderFromSheet(sheetId) {
-  const info    = await readRange(sheetId, 'Sheet1!A1:B10');
+  const info    = await readRange(sheetId, 'Sheet1!A1:B11');
   const infoMap = Object.fromEntries(info.map(([k, v]) => [k, v]));
 
   const allLiRows = await readRange(sheetId, "'Line Items'!A1:Z1000");
@@ -145,13 +147,14 @@ async function readOrderFromSheet(sheetId) {
       continue;
     }
     if (newFmt) {
-      const [, itemTypeName, color, sizesStr, frontMethod, frontNotes, backMethod, backNotes, itemTypeId] = row;
+      const [, itemTypeName, color, sizesStr, frontMethod, frontNotes, backMethod, backNotes, itemTypeId, customerEmail] = row;
       lineItemsMap[num] = {
         num, itemTypeName, itemTypeId: itemTypeId || '',
         color,
         sizes: parseSizes(sizesStr),
         frontMethod: frontMethod || '', frontNotes: frontNotes || '',
         backMethod: backMethod || '', backNotes: backNotes || '',
+        customerEmail: customerEmail || '',
         frontDesigns: [], backDesigns: [],
       };
     } else {
@@ -163,6 +166,7 @@ async function readOrderFromSheet(sheetId) {
         num, apparelType, color, sizes,
         frontMethod: '', frontNotes: rest[6] || '',
         backMethod: '', backNotes: rest[7] || '',
+        customerEmail: '',
         frontDesigns: [], backDesigns: [],
       };
     }
@@ -192,6 +196,7 @@ async function readOrderFromSheet(sheetId) {
     sheetId:     infoMap['Sheet ID']     || sheetId,
     draftId:     infoMap['Draft ID']     || '',
     folderId:    infoMap['Folder ID']    || '',
+    delayedFrom: infoMap['Delayed From'] || '',
     lineItems:   Object.values(lineItemsMap),
     customers,
   };

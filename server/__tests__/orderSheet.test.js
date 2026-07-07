@@ -49,7 +49,7 @@ test('writeOrderToSheet writes compact sizes and methods', async () => {
   // Find the Line Items writeRange call
   const liCall = writeRange.mock.calls.find(c => c[1].includes('Line Items'));
   const rows = liCall[2];
-  expect(rows[0]).toEqual(['#', 'Item Type', 'Color', 'Sizes', 'Front Method', 'Front Notes', 'Back Method', 'Back Notes', 'Item Type ID']);
+  expect(rows[0]).toEqual(['#', 'Item Type', 'Color', 'Sizes', 'Front Method', 'Front Notes', 'Back Method', 'Back Notes', 'Item Type ID', 'Customer Email']);
   expect(rows[1][0]).toBe('01');
   expect(rows[1][1]).toBe('Unisex Tee');
   expect(rows[1][3]).toBe('M×5, L×3');
@@ -172,4 +172,37 @@ test('writeCustomersToSheet writes only the Customers tab', async () => {
   await writeCustomersToSheet('s', [{ name: 'A', email: 'a@x.com', emailed: { shipped: '2026-07-03T00:00:00Z' } }]);
   const call = writeRange.mock.calls.find(c => c[1].includes('Customers'));
   expect(call[2][1]).toEqual(['A', 'a@x.com', '', '2026-07-03T00:00:00Z', '']);
+});
+
+test('writeOrderToSheet writes Customer Email column and Delayed From', async () => {
+  clearRange.mockResolvedValue(); writeRange.mockResolvedValue();
+  const order = {
+    orderId: 'RMC-9', state: 'delayed', created: '2026-07-06', delayedFrom: 'sent', sheetId: 's',
+    lineItems: [{ num: '01', itemTypeName: 'Tank', color: 'Gray', sizes: { M: { total: 1, inventory: 0 } },
+      frontMethod: '', frontNotes: '', backMethod: '', backNotes: '', frontDesigns: [], backDesigns: [],
+      itemTypeId: 't1', customerEmail: 'jane@x.com' }],
+  };
+  await writeOrderToSheet('s', order);
+  const liCall = writeRange.mock.calls.find(c => c[1].includes('Line Items'));
+  expect(liCall[2][0]).toContain('Customer Email');
+  expect(liCall[2][1][liCall[2][0].indexOf('Customer Email')]).toBe('jane@x.com');
+  const infoCall = writeRange.mock.calls.find(c => c[1].includes('Sheet1'));
+  expect(infoCall[2]).toContainEqual(['Delayed From', 'sent']);
+});
+
+test('readOrderFromSheet reads customerEmail and delayedFrom', async () => {
+  readRange.mockImplementation((sheetId, range) => {
+    if (range.startsWith('Sheet1')) return Promise.resolve([
+      ['Order ID', 'RMC-9'], ['State', 'delayed'], ['Sheet ID', 's'], ['Delayed From', 'sent'],
+    ]);
+    if (range.includes('Line Items')) return Promise.resolve([
+      ['#', 'Item Type', 'Color', 'Sizes', 'Front Method', 'Front Notes', 'Back Method', 'Back Notes', 'Item Type ID', 'Customer Email'],
+      ['01', 'Tank', 'Gray', 'M×1', '', '', '', '', 't1', 'jane@x.com'],
+    ]);
+    if (range.startsWith('Designs')) return Promise.resolve([]);
+    return Promise.resolve([]);
+  });
+  const order = await readOrderFromSheet('s');
+  expect(order.delayedFrom).toBe('sent');
+  expect(order.lineItems[0].customerEmail).toBe('jane@x.com');
 });
