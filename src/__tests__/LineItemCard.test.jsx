@@ -1,4 +1,5 @@
-import { render, screen } from '@testing-library/react';
+import { describe, test, expect, vi } from 'vitest';
+import { render, screen, fireEvent } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import LineItemCard from '../components/LineItemCard';
 
@@ -50,4 +51,24 @@ test('legacy item with apparelType shows read-only type name', () => {
   render(<LineItemCard item={legacyItem} items={CATALOG_ITEMS} onChange={vi.fn()} onRemove={vi.fn()} onAddDesign={vi.fn()} />);
   expect(screen.getByText(/Youth/)).toBeInTheDocument();
   expect(screen.getByText(/Select an item type/i)).toBeInTheDocument();
+});
+
+const customerItem = { num: '01', itemTypeId: '', itemTypeName: '', color: '', sizes: {},
+  frontDesigns: [], backDesigns: [], frontNotes: '', backNotes: '', frontMethod: '', backMethod: '', customerEmail: '' };
+
+describe('LineItemCard customer dropdown', () => {
+  test('lists order customers and reports selection', () => {
+    const onChange = vi.fn();
+    render(<LineItemCard item={customerItem} items={[]} onChange={onChange} onRemove={() => {}}
+      onAddDesign={() => {}} customers={[{ name: 'Jane', email: 'jane@x.com' }]} />);
+    const select = screen.getByLabelText('Customer');
+    fireEvent.change(select, { target: { value: 'jane@x.com' } });
+    expect(onChange).toHaveBeenCalledWith(expect.objectContaining({ customerEmail: 'jane@x.com' }));
+  });
+
+  test('shows empty hint when no customers', () => {
+    render(<LineItemCard item={customerItem} items={[]} onChange={() => {}} onRemove={() => {}}
+      onAddDesign={() => {}} customers={[]} />);
+    expect(screen.getByLabelText('Customer')).toBeDisabled();
+  });
 });

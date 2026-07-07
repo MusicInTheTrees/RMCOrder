@@ -285,6 +285,7 @@ export default function OrderBuilder() {
               onRemove={() => removeLineItem(item.num)}
               onAddDesign={(placement) => setSelectingDesign({ num: item.num, placement })}
               getStock={getStock}
+              customers={order.customers || []}
             />
           ))}
           <button className="btn-secondary add-line-item" onClick={addLineItem}>
