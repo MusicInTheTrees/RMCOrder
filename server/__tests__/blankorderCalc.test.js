@@ -23,8 +23,8 @@ describe('allocate', () => {
   });
   test('floors exceeding total are handed out by largest floor', () => {
     const r = allocate({ a: 1, b: 1 }, 3, { a: 5, b: 1 });
-    expect(r.a).toBe(2);
-    expect(r.b).toBe(1);
+    expect(r.a).toBe(3);
+    expect(r.b).toBe(0);
   });
   test('no demand signal spreads evenly by sorted key', () => {
     const r = allocate({ b: 0, a: 0 }, 3);

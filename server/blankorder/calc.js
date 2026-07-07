@@ -24,7 +24,7 @@ function allocate(weights, total, floors) {
 
   const reserved = keys.reduce((s, k) => s + fl[k], 0);
   if (reserved > total) {
-    const order = [...keys].sort((a, b) => (fl[a] - fl[b]) || byKey(a, b));
+    const order = [...keys].sort((a, b) => (fl[b] - fl[a]) || byKey(a, b));
     let left = total;
     for (const k of order) {
       const give = Math.min(fl[k], left);
