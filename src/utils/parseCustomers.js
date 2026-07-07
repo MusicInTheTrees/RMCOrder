@@ -9,7 +9,7 @@ export function parseCustomers(text) {
     const line = raw.trim();
     if (!line) continue;
     const match = line.match(EMAIL_RE);
-    if (!match) { skipped.push(line); continue; }
+    if (!match) { skipped.push({ line, reason: 'no email address found' }); continue; }
     const email = match[0].trim();
     let name = line
       .replace(email, '')
