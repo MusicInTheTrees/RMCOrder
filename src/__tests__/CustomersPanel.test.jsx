@@ -68,3 +68,9 @@ test('Generate Draft is disabled and relabeled when order is not in an emailing 
   render(<CustomersPanel customers={[{ name: 'A', email: 'a@x.com', emailed: {} }]} onChange={() => {}} {...base} orderState="building" />);
   expect(screen.getByRole('button', { name: /order not in an emailing state/i })).toBeDisabled();
 });
+
+test('paste textarea shows a multi-line example placeholder', async () => {
+  render(<CustomersPanel customers={[]} onChange={() => {}} {...base} />);
+  await userEvent.click(screen.getByRole('button', { name: /Paste Customer Info \(CSV\)/i }));
+  expect(screen.getByPlaceholderText(/jane@example\.com/i)).toBeInTheDocument();
+});

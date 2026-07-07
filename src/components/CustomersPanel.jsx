@@ -32,7 +32,7 @@ export default function CustomersPanel({ customers = [], onChange, sheetId, orde
     const email = newEmail.trim();
     if (!email) return;
     if (customers.some(c => c.email.toLowerCase() === email.toLowerCase())) {
-      setSkipped([`${email} is already in the list`]);
+      setSkipped([{ line: email, reason: 'already in the list' }]);
       return;
     }
     onChange([...customers, { name: newName.trim(), email, emailed: {} }]);
@@ -103,7 +103,7 @@ export default function CustomersPanel({ customers = [], onChange, sheetId, orde
         <div className="customers-paste">
           <textarea
             className="customers-paste-input"
-            placeholder="One per line — 'Name, email', 'Name <email>', or just email"
+            placeholder={"One per line. Each line needs an email address:\nJane Doe, jane@example.com\nJohn Smith <john@example.com>\nbare@example.com"}
             value={pasteText}
             onChange={e => setPasteText(e.target.value)}
           />
@@ -111,7 +111,7 @@ export default function CustomersPanel({ customers = [], onChange, sheetId, orde
         </div>
       )}
       {skipped.length > 0 && (
-        <p className="customers-skipped">Skipped: {skipped.join('; ')}</p>
+        <p className="customers-skipped">Skipped: {skipped.map(s => `'${s.line}' — ${s.reason}`).join('; ')}</p>
       )}
 
       {/* Editable list */}
