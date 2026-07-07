@@ -217,19 +217,30 @@ export default function OrderBuilder() {
     }
 
     setOrder(prev => ({ ...prev, state: nextState }));
+    await maybeAutoSendEmails(nextState);
+  }
 
-    if (EMAIL_STATES.includes(nextState) && autoSend) {
-      const pending = (order.customers || []).filter(c => !(c.emailed && c.emailed[nextState]));
-      if (pending.length > 0) {
-        try {
-          const res = await sendCustomerEmail(sheetId, nextState, pending.map(c => ({ name: c.name, email: c.email })));
-          stampEmailed(nextState, res.emails, res.at);
-          setToast(`Sent ${res.sent} ${nextState} email(s)`);
-        } catch (err) {
-          logError(`Auto-send failed: ${err.message}`);
-        }
-      }
+  async function maybeAutoSendEmails(nextState) {
+    if (!(EMAIL_STATES.includes(nextState) && autoSend)) return;
+    const pending = (order.customers || []).filter(c => !(c.emailed && c.emailed[nextState]));
+    if (pending.length === 0) return;
+    try {
+      const res = await sendCustomerEmail(sheetId, nextState, pending.map(c => ({ name: c.name, email: c.email })));
+      stampEmailed(nextState, res.emails, res.at);
+      setToast(`Sent ${res.sent} ${nextState} email(s)`);
+    } catch (err) {
+      logError(`Auto-send failed: ${err.message}`);
     }
+  }
+
+  async function handleEnterDelayed() {
+    setOrder(prev => ({ ...prev, state: 'delayed', delayedFrom: prev.state }));
+    await maybeAutoSendEmails('delayed');
+  }
+
+  // Leaving Delayed is a manual state choice — no inventory changes, no emails.
+  function handleExitDelayed(toState) {
+    setOrder(prev => ({ ...prev, state: toState, delayedFrom: '' }));
   }
 
   // Moving backward is a manual correction — no inventory changes, no emails.
@@ -247,6 +258,8 @@ export default function OrderBuilder() {
         saving={saving}
         onAdvanceState={handleAdvanceState}
         onRegressState={handleRegressState}
+        onEnterDelayed={handleEnterDelayed}
+        onExitDelayed={handleExitDelayed}
         onGenerateDraft={handleGenerateDraft}
         onNameChange={name => setOrder(prev => ({ ...prev, orderName: name }))}
       />
