@@ -6,6 +6,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **RMCOrder** — a locally-hosted web app for Rocky Meowtain Company LLC (RMC) to build, manage, and email apparel print orders to their printing partner Spew. It replaces hand-written text orders with a structured order builder backed by Google Drive and Google Sheets. Launched via `start.bat`.
 
+> **For a feature-level overview (what the app does, the order/line-item model, the two email systems, and the three easily-confused "blank" concepts), read [`docs/APP_OVERVIEW.md`](docs/APP_OVERVIEW.md) first.** This file below covers commands, infrastructure, and file locations.
+
 ## Commands
 
 **Run both servers (normal use):**
