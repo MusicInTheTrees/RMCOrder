@@ -2,11 +2,13 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { listOrders, createOrder, deleteOrder } from '../api/orders';
 import StateBadge, { STATE_COLORS } from './StateBadge';
+import NewOrderDialog from './NewOrderDialog';
 
 export default function OrdersList() {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [showNewDialog, setShowNewDialog] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -27,7 +29,13 @@ export default function OrdersList() {
     }
   }
 
+  function handleBlankOrder() {
+    setShowNewDialog(false);
+    navigate('/blank-order');
+  }
+
   async function handleNewOrder() {
+    setShowNewDialog(false);
     setLoading(true);
     setError(null);
     try {
@@ -47,7 +55,7 @@ export default function OrdersList() {
         <h1>RMC Ordering</h1>
         <div className="header-actions">
           <button onClick={() => navigate('/settings')}>⚙ Settings</button>
-          <button className="btn-primary" onClick={handleNewOrder} disabled={loading}>
+          <button className="btn-primary" onClick={() => setShowNewDialog(true)} disabled={loading}>
             {loading ? 'Creating...' : '+ New Order'}
           </button>
         </div>
@@ -78,6 +86,13 @@ export default function OrdersList() {
           </div>
         ))}
       </div>
+      {showNewDialog && (
+        <NewOrderDialog
+          onCustom={handleNewOrder}
+          onBlank={handleBlankOrder}
+          onCancel={() => setShowNewDialog(false)}
+        />
+      )}
     </div>
   );
 }
