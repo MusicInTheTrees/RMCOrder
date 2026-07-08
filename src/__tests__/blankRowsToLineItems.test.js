@@ -30,5 +30,6 @@ describe('blankRowsToLineItems', () => {
     expect(items[0].itemTypeName).toBe('Tank');
     expect(items[0].itemTypeId).toBe('');
     expect(items[0].sizes).toEqual({ M: { total: 3, inventory: 0 } });
+    expect(items[0].num).toBe('01');
   });
 });
