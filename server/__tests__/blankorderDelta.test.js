@@ -55,6 +55,11 @@ describe('parity with the Python feed fixture', () => {
       return;
     }
 
+    if (!fs.existsSync(path.join(dir, 'catalog_delta.json'))) {
+      console.log('[skip] catalog_delta.json fixture not found');
+      return;
+    }
+
     const csvOld = fs.readFileSync(path.join(src, oldName), 'utf8');
     const csvNew = fs.readFileSync(path.join(src, newName), 'utf8');
     const expected = JSON.parse(fs.readFileSync(path.join(dir, 'catalog_delta.json'), 'utf8'));
