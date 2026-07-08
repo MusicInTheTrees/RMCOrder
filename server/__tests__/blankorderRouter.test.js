@@ -27,12 +27,23 @@ describe('POST /blankorder/plan', () => {
     expect(res.status).toBe(200);
     const sum = res.body.industry.reduce((s, r) => s + r.qty, 0);
     expect(sum).toBe(12);
+    expect(res.body.blended.reduce((s, r) => s + r.qty, 0)).toBe(12);
     expect(res.body.effectiveTotal).toBe(12);
     expect(res.body.feedMeta).toBeDefined();
   });
   test('400 when CSVs are missing', async () => {
     const res = await request(app).post('/blankorder/plan').send({ grandTotal: 12 });
     expect(res.status).toBe(400);
+  });
+  test('accepts a pre-built feed instead of CSVs', async () => {
+    const feed = { meta: { totalUnits: 12 }, velocity: [
+      { itemType: 'Shirt', style: 'UM', color: 'Black', size: 'L', unitsSold: 12, isApparel: true },
+    ] };
+    const res = await request(app).post('/blankorder/plan').send({
+      feed, grandTotal: 12, perTypeTotals: {}, perTypeSizeRestrictions: {},
+    });
+    expect(res.status).toBe(200);
+    expect(res.body.industry.reduce((s, r) => s + r.qty, 0)).toBe(12);
   });
 });
 
