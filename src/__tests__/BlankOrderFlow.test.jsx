@@ -38,6 +38,6 @@ describe('BlankOrderFlow', () => {
     fireEvent.click(screen.getByRole('button', { name: /compute/i }));
     await waitFor(() => expect(computeBlankPlan).toHaveBeenCalled());
     // Step 2 shows the compare table headers.
-    await screen.findByText(/industry/i);
+    await screen.findByRole('columnheader', { name: /industry/i });
   });
 });
