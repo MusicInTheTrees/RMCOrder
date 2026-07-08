@@ -135,13 +135,17 @@ The toolkit is two stages, built on a **facts-vs-policy** split:
    largest-remainder (Hamilton) rounding. Produces an "industry" curve plan and a
    "blended" (demand + industry) plan.
 
-**Integration direction (in progress):** port this toolkit into RMCOrder as a
-**"Blank Order"** path off the New Order popup. It computes a recommendation,
-lets the user pick/edit a curve, then **generates a normal order made of blank
-line items** (concept #1) that opens in the Order Builder. See the design spec
-under `docs/superpowers/specs/` for the current plan. Phase 1 ingests uploaded
-Square CSVs; a later phase links the Square API directly behind the same
-demand-source interface.
+**Integration (Phase 1 implemented):** the toolkit is ported into RMCOrder as a
+**"Blank Order"** path off the New Order popup (`OrdersList` "+ New Order" →
+`NewOrderDialog` → route `/blank-order` → `BlankOrderFlow`). It computes a
+recommendation (server module `server/blankorder/`, verified to reproduce the
+Python numbers exactly), lets the user pick/edit a curve in a three-column table
+(`BlankOrderTable`), then **generates a normal order made of blank line items**
+(concept #1) that opens in the Order Builder. Server endpoints: `POST
+/blankorder/plan`, `GET /blankorder/config`. Phase 1 ingests uploaded Square
+CSVs via a swappable `demandSource`; a later phase links the Square API directly
+behind the same interface (`fromSquare` stub). See the design spec and plan
+under `docs/superpowers/`.
 
 > **Why this matters:** "make a Blank Order" (the new Square-driven purchase
 > flow) is *not* the same as the existing "Blank Demand Stats" report, and its
