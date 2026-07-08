@@ -1,5 +1,5 @@
 // src/components/BlankOrderTable.jsx
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { createOrder, getOrderBySheet, saveOrderToSheet } from '../api/orders';
 import { blankRowsToLineItems } from '../utils/blankRowsToLineItems';
@@ -11,7 +11,8 @@ const keyOf = r => `${r.itemType} ${r.color} ${r.size}`;
 export default function BlankOrderTable({ plan, styleItemTypeMap, onBack }) {
   const navigate = useNavigate();
   const [working, setWorking] = useState({});   // key -> qty (string/number)
-  const [customRows, setCustomRows] = useState([]); // [{itemType,color,size}]
+  const [customRows, setCustomRows] = useState([]); // [{ id, itemType, color, size, qty }]
+  const nextId = useRef(1);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(null);
 
@@ -30,8 +31,6 @@ export default function BlankOrderTable({ plan, styleItemTypeMap, onBack }) {
       ((SIZE_ORDER[a.size] ?? 99) - (SIZE_ORDER[b.size] ?? 99)));
   }, [plan]);
 
-  const allRows = [...baseRows, ...customRows];
-
   function fillFrom(map) {
     const next = {};
     for (const r of baseRows) next[keyOf(r)] = map[keyOf(r)] || 0;
@@ -42,20 +41,20 @@ export default function BlankOrderTable({ plan, styleItemTypeMap, onBack }) {
   function setWorkingQty(k, val) { setWorking(w => ({ ...w, [k]: val })); }
 
   function addCustomRow() {
-    setCustomRows(rows => [...rows, { itemType: '', color: '', size: '' }]);
+    setCustomRows(rows => [...rows, { id: nextId.current++, itemType: '', color: '', size: '', qty: '' }]);
   }
-  function updateCustom(i, field, val) {
-    setCustomRows(rows => rows.map((r, idx) => idx === i ? { ...r, [field]: val } : r));
+  function updateCustom(id, field, val) {
+    setCustomRows(rows => rows.map(r => r.id === id ? { ...r, [field]: val } : r));
   }
-  function removeCustom(i) {
-    const r = customRows[i];
-    setWorking(w => { const n = { ...w }; delete n[keyOf(r)]; return n; });
-    setCustomRows(rows => rows.filter((_, idx) => idx !== i));
+  function removeCustom(id) {
+    setCustomRows(rows => rows.filter(r => r.id !== id));
   }
 
-  const workingRows = allRows
-    .map(r => ({ itemType: r.itemType, color: r.color, size: r.size, qty: Number(working[keyOf(r)]) || 0 }))
-    .filter(r => r.qty > 0);
+  const baseWorking = baseRows
+    .map(r => ({ itemType: r.itemType, color: r.color, size: r.size, qty: Number(working[keyOf(r)]) || 0 }));
+  const customWorking = customRows
+    .map(r => ({ itemType: r.itemType, color: r.color, size: r.size, qty: Number(r.qty) || 0 }));
+  const workingRows = [...baseWorking, ...customWorking].filter(r => r.qty > 0);
   const workingTotal = workingRows.reduce((s, r) => s + r.qty, 0);
   const indTotal = plan.industry.reduce((s, r) => s + r.qty, 0);
   const blTotal = plan.blended.reduce((s, r) => s + r.qty, 0);
@@ -107,19 +106,16 @@ export default function BlankOrderTable({ plan, styleItemTypeMap, onBack }) {
               </tr>
             );
           })}
-          {customRows.map((r, i) => {
-            const k = keyOf(r);
-            return (
-              <tr key={`custom-${i}`}>
-                <td><input aria-label={`custom type ${i}`} value={r.itemType} onChange={e => updateCustom(i, 'itemType', e.target.value)} /></td>
-                <td><input aria-label={`custom color ${i}`} value={r.color} onChange={e => updateCustom(i, 'color', e.target.value)} /></td>
-                <td><input aria-label={`custom size ${i}`} value={r.size} onChange={e => updateCustom(i, 'size', e.target.value)} /></td>
-                <td>—</td><td>—</td>
-                <td><input type="number" min="0" aria-label={`working qty ${k}`} value={working[k] ?? ''} onChange={e => setWorkingQty(k, e.target.value)} /></td>
-                <td><button aria-label={`remove custom ${i}`} onClick={() => removeCustom(i)}>✕</button></td>
-              </tr>
-            );
-          })}
+          {customRows.map((r, i) => (
+            <tr key={r.id}>
+              <td><input aria-label={`custom type ${i}`} value={r.itemType} onChange={e => updateCustom(r.id, 'itemType', e.target.value)} /></td>
+              <td><input aria-label={`custom color ${i}`} value={r.color} onChange={e => updateCustom(r.id, 'color', e.target.value)} /></td>
+              <td><input aria-label={`custom size ${i}`} value={r.size} onChange={e => updateCustom(r.id, 'size', e.target.value)} /></td>
+              <td>—</td><td>—</td>
+              <td><input type="number" min="0" aria-label={`custom working qty ${i}`} value={r.qty} onChange={e => updateCustom(r.id, 'qty', e.target.value)} /></td>
+              <td><button aria-label={`remove custom ${i}`} onClick={() => removeCustom(r.id)}>✕</button></td>
+            </tr>
+          ))}
         </tbody>
         <tfoot>
           <tr>

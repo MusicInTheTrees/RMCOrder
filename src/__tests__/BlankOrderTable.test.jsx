@@ -10,7 +10,7 @@ vi.mock('../api/orders', () => ({
   getOrderBySheet: vi.fn(() => Promise.resolve({ orderId: 'RMC-009-2026-07-07', sheetId: 'sh1', folderId: 'f1', state: 'building', lineItems: [] })),
   saveOrderToSheet: vi.fn(() => Promise.resolve({ ok: true })),
 }));
-import { createOrder, saveOrderToSheet } from '../api/orders';
+import { createOrder, getOrderBySheet, saveOrderToSheet } from '../api/orders';
 import BlankOrderTable from '../components/BlankOrderTable';
 
 const plan = {
@@ -31,7 +31,7 @@ function renderTable() {
 }
 
 describe('BlankOrderTable', () => {
-  beforeEach(() => { navigate.mockClear(); createOrder.mockClear(); saveOrderToSheet.mockClear(); });
+  beforeEach(() => { navigate.mockClear(); createOrder.mockClear(); getOrderBySheet.mockClear(); saveOrderToSheet.mockClear(); });
 
   test('Generate is disabled until Working has values', () => {
     renderTable();
@@ -58,5 +58,24 @@ describe('BlankOrderTable', () => {
     expect(savedItems[0].sizes).toEqual({ M: { total: 6, inventory: 0 }, L: { total: 6, inventory: 0 } });
     expect(savedArgs[2]).toBe(true); // full save
     await waitFor(() => expect(navigate).toHaveBeenCalledWith('/orders/RMC-009-2026-07-07?sheetId=sh1'));
+  });
+
+  test('custom row qty typed before the fields survives into the generated line items', async () => {
+    renderTable();
+    // Seed base Working so Generate is enabled and the base rows are present.
+    fireEvent.click(screen.getByRole('button', { name: /use blended/i }));
+    fireEvent.click(screen.getByRole('button', { name: /add custom row/i }));
+    // Type the QTY FIRST, before filling type/color/size.
+    fireEvent.change(screen.getByLabelText(/custom working qty 0/i), { target: { value: '9' } });
+    // Now fill the identity fields (this used to re-key and lose the qty).
+    fireEvent.change(screen.getByLabelText(/custom type 0/i), { target: { value: 'Unisex Shirt' } });
+    fireEvent.change(screen.getByLabelText(/custom color 0/i), { target: { value: 'Red' } });
+    fireEvent.change(screen.getByLabelText(/custom size 0/i), { target: { value: 'S' } });
+    fireEvent.click(screen.getByRole('button', { name: /generate order/i }));
+    await waitFor(() => expect(saveOrderToSheet).toHaveBeenCalled());
+    const savedItems = saveOrderToSheet.mock.calls[0][1].lineItems;
+    const redItem = savedItems.find(li => li.color === 'Red');
+    expect(redItem).toBeTruthy();
+    expect(redItem.sizes).toEqual({ S: { total: 9, inventory: 0 } });
   });
 });
