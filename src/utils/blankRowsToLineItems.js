@@ -1,3 +1,5 @@
+const SEP = String.fromCharCode(0);
+
 export function blankRowsToLineItems(rows, styleItemTypeMap = {}) {
   const groups = new Map();
   for (const r of rows || []) {
@@ -5,7 +7,7 @@ export function blankRowsToLineItems(rows, styleItemTypeMap = {}) {
     const mapped = styleItemTypeMap[r.itemType] || {};
     const itemTypeName = mapped.name || r.itemType;
     const itemTypeId = mapped.id || '';
-    const key = `${itemTypeId}\x00${itemTypeName}\x00${r.color}`;
+    const key = [itemTypeId, itemTypeName, r.color].join(SEP);
     let g = groups.get(key);
     if (!g) { g = { itemTypeName, itemTypeId, color: r.color, sizes: {} }; groups.set(key, g); }
     const prev = g.sizes[r.size]?.total || 0;
