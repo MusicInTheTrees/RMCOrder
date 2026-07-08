@@ -1,0 +1,438 @@
+{
+  "meta": {
+    "total": 100,
+    "mode": "compare",
+    "sourceFeed": "catalog_delta_2026-07-04_to_2026-07-06.json",
+    "policy": {
+      "colorAliases": {
+        "Ash": "Heather Gray"
+      },
+      "excludedColors": [
+        "Daisy"
+      ],
+      "excludedSizes": [
+        "XS",
+        "S",
+        "3XL",
+        "4XL",
+        "5XL"
+      ],
+      "coreColors": [
+        "Black",
+        "White"
+      ],
+      "coreColorFloorPct": 0.1,
+      "blendWeight": 0.5
+    }
+  },
+  "industry": [
+    {
+      "itemType": "Tank",
+      "style": "Tank",
+      "color": "Black",
+      "size": "L",
+      "total": 11
+    },
+    {
+      "itemType": "Tank",
+      "style": "Tank",
+      "color": "Black",
+      "size": "M",
+      "total": 9
+    },
+    {
+      "itemType": "Tank",
+      "style": "Tank",
+      "color": "Black",
+      "size": "XL",
+      "total": 9
+    },
+    {
+      "itemType": "Tank",
+      "style": "Tank",
+      "color": "Black",
+      "size": "2XL",
+      "total": 3
+    },
+    {
+      "itemType": "Tank",
+      "style": "Tank",
+      "color": "Cardinal Red",
+      "size": "M",
+      "total": 3
+    },
+    {
+      "itemType": "Tank",
+      "style": "Tank",
+      "color": "Cardinal Red",
+      "size": "L",
+      "total": 3
+    },
+    {
+      "itemType": "Tank",
+      "style": "Tank",
+      "color": "Cardinal Red",
+      "size": "XL",
+      "total": 2
+    },
+    {
+      "itemType": "Tank",
+      "style": "Tank",
+      "color": "White",
+      "size": "L",
+      "total": 2
+    },
+    {
+      "itemType": "Tank",
+      "style": "Tank",
+      "color": "Cardinal Red",
+      "size": "2XL",
+      "total": 1
+    },
+    {
+      "itemType": "Tank",
+      "style": "Tank",
+      "color": "White",
+      "size": "M",
+      "total": 1
+    },
+    {
+      "itemType": "Tank",
+      "style": "Tank",
+      "color": "White",
+      "size": "XL",
+      "total": 1
+    },
+    {
+      "itemType": "Shirt",
+      "style": "Unisex Shirt",
+      "color": "Heather Gray",
+      "size": "L",
+      "total": 10
+    },
+    {
+      "itemType": "Shirt",
+      "style": "Unisex Shirt",
+      "color": "Heather Gray",
+      "size": "M",
+      "total": 7
+    },
+    {
+      "itemType": "Shirt",
+      "style": "Unisex Shirt",
+      "color": "Heather Gray",
+      "size": "XL",
+      "total": 7
+    },
+    {
+      "itemType": "Shirt",
+      "style": "Unisex Shirt",
+      "color": "White",
+      "size": "L",
+      "total": 5
+    },
+    {
+      "itemType": "Shirt",
+      "style": "Unisex Shirt",
+      "color": "White",
+      "size": "M",
+      "total": 4
+    },
+    {
+      "itemType": "Shirt",
+      "style": "Unisex Shirt",
+      "color": "Heather Gray",
+      "size": "2XL",
+      "total": 3
+    },
+    {
+      "itemType": "Shirt",
+      "style": "Unisex Shirt",
+      "color": "White",
+      "size": "XL",
+      "total": 3
+    },
+    {
+      "itemType": "Shirt",
+      "style": "Unisex Shirt",
+      "color": "Black",
+      "size": "L",
+      "total": 2
+    },
+    {
+      "itemType": "Shirt",
+      "style": "Unisex Shirt",
+      "color": "Black",
+      "size": "M",
+      "total": 1
+    },
+    {
+      "itemType": "Shirt",
+      "style": "Unisex Shirt",
+      "color": "Black",
+      "size": "XL",
+      "total": 1
+    },
+    {
+      "itemType": "Shirt",
+      "style": "Unisex Shirt",
+      "color": "White",
+      "size": "2XL",
+      "total": 1
+    },
+    {
+      "itemType": "Shirt",
+      "style": "Youth Shirt",
+      "color": "Carolina Blue",
+      "size": "M",
+      "total": 3
+    },
+    {
+      "itemType": "Shirt",
+      "style": "Youth Shirt",
+      "color": "Carolina Blue",
+      "size": "L",
+      "total": 3
+    },
+    {
+      "itemType": "Shirt",
+      "style": "Youth Shirt",
+      "color": "Carolina Blue",
+      "size": "XL",
+      "total": 2
+    },
+    {
+      "itemType": "Shirt",
+      "style": "Youth Shirt",
+      "color": "Black",
+      "size": "L",
+      "total": 1
+    },
+    {
+      "itemType": "Shirt",
+      "style": "Youth Shirt",
+      "color": "Carolina Blue",
+      "size": "2XL",
+      "total": 1
+    },
+    {
+      "itemType": "Shirt",
+      "style": "Youth Shirt",
+      "color": "White",
+      "size": "L",
+      "total": 1
+    }
+  ],
+  "blended": [
+    {
+      "itemType": "Tank",
+      "style": "Tank",
+      "color": "Black",
+      "size": "L",
+      "total": 10
+    },
+    {
+      "itemType": "Tank",
+      "style": "Tank",
+      "color": "Black",
+      "size": "M",
+      "total": 8
+    },
+    {
+      "itemType": "Tank",
+      "style": "Tank",
+      "color": "Black",
+      "size": "XL",
+      "total": 8
+    },
+    {
+      "itemType": "Tank",
+      "style": "Tank",
+      "color": "Black",
+      "size": "2XL",
+      "total": 6
+    },
+    {
+      "itemType": "Tank",
+      "style": "Tank",
+      "color": "Cardinal Red",
+      "size": "L",
+      "total": 3
+    },
+    {
+      "itemType": "Tank",
+      "style": "Tank",
+      "color": "Cardinal Red",
+      "size": "M",
+      "total": 2
+    },
+    {
+      "itemType": "Tank",
+      "style": "Tank",
+      "color": "Cardinal Red",
+      "size": "XL",
+      "total": 2
+    },
+    {
+      "itemType": "Tank",
+      "style": "Tank",
+      "color": "Cardinal Red",
+      "size": "2XL",
+      "total": 2
+    },
+    {
+      "itemType": "Tank",
+      "style": "Tank",
+      "color": "White",
+      "size": "M",
+      "total": 1
+    },
+    {
+      "itemType": "Tank",
+      "style": "Tank",
+      "color": "White",
+      "size": "L",
+      "total": 1
+    },
+    {
+      "itemType": "Tank",
+      "style": "Tank",
+      "color": "White",
+      "size": "XL",
+      "total": 1
+    },
+    {
+      "itemType": "Tank",
+      "style": "Tank",
+      "color": "White",
+      "size": "2XL",
+      "total": 1
+    },
+    {
+      "itemType": "Shirt",
+      "style": "Unisex Shirt",
+      "color": "Heather Gray",
+      "size": "XL",
+      "total": 11
+    },
+    {
+      "itemType": "Shirt",
+      "style": "Unisex Shirt",
+      "color": "Heather Gray",
+      "size": "M",
+      "total": 7
+    },
+    {
+      "itemType": "Shirt",
+      "style": "Unisex Shirt",
+      "color": "Heather Gray",
+      "size": "2XL",
+      "total": 5
+    },
+    {
+      "itemType": "Shirt",
+      "style": "Unisex Shirt",
+      "color": "White",
+      "size": "XL",
+      "total": 5
+    },
+    {
+      "itemType": "Shirt",
+      "style": "Unisex Shirt",
+      "color": "Heather Gray",
+      "size": "L",
+      "total": 4
+    },
+    {
+      "itemType": "Shirt",
+      "style": "Unisex Shirt",
+      "color": "White",
+      "size": "M",
+      "total": 3
+    },
+    {
+      "itemType": "Shirt",
+      "style": "Unisex Shirt",
+      "color": "White",
+      "size": "2XL",
+      "total": 3
+    },
+    {
+      "itemType": "Shirt",
+      "style": "Unisex Shirt",
+      "color": "White",
+      "size": "L",
+      "total": 2
+    },
+    {
+      "itemType": "Shirt",
+      "style": "Unisex Shirt",
+      "color": "Black",
+      "size": "M",
+      "total": 1
+    },
+    {
+      "itemType": "Shirt",
+      "style": "Unisex Shirt",
+      "color": "Black",
+      "size": "L",
+      "total": 1
+    },
+    {
+      "itemType": "Shirt",
+      "style": "Unisex Shirt",
+      "color": "Black",
+      "size": "XL",
+      "total": 1
+    },
+    {
+      "itemType": "Shirt",
+      "style": "Unisex Shirt",
+      "color": "Black",
+      "size": "2XL",
+      "total": 1
+    },
+    {
+      "itemType": "Shirt",
+      "style": "Youth Shirt",
+      "color": "Carolina Blue",
+      "size": "L",
+      "total": 6
+    },
+    {
+      "itemType": "Shirt",
+      "style": "Youth Shirt",
+      "color": "Black",
+      "size": "L",
+      "total": 1
+    },
+    {
+      "itemType": "Shirt",
+      "style": "Youth Shirt",
+      "color": "Carolina Blue",
+      "size": "M",
+      "total": 1
+    },
+    {
+      "itemType": "Shirt",
+      "style": "Youth Shirt",
+      "color": "Carolina Blue",
+      "size": "XL",
+      "total": 1
+    },
+    {
+      "itemType": "Shirt",
+      "style": "Youth Shirt",
+      "color": "Carolina Blue",
+      "size": "2XL",
+      "total": 1
+    },
+    {
+      "itemType": "Shirt",
+      "style": "Youth Shirt",
+      "color": "White",
+      "size": "L",
+      "total": 1
+    }
+  ]
+}

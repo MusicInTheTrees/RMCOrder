@@ -106,3 +106,54 @@ describe('curveFor', () => {
     expect(c.M).toBeGreaterThan(c.XL);       // observed pushes M above XL
   });
 });
+
+// ---------------------------------------------------------------------------
+// Task 3: planRows + computePlans — parity against Python fixtures
+// ---------------------------------------------------------------------------
+const fs = require('fs');
+const path = require('path');
+const { computePlans } = require('../blankorder/calc');
+
+const FX = path.join(__dirname, 'fixtures', 'blankorder');
+const feed = JSON.parse(fs.readFileSync(path.join(FX, 'catalog_delta.json'), 'utf8'));
+const fxConfig = JSON.parse(fs.readFileSync(path.join(FX, 'blank_calc_config.json'), 'utf8'));
+
+// The Python recommendation JSON rows are {itemType, style, color, size, total};
+// our Row is {itemType: styleKey, color, size, qty}. Normalize both to a sorted
+// comparable form keyed on style+color+size.
+function norm(rows, useStyle) {
+  return rows
+    .map(r => ({
+      k: `${useStyle ? r.style : r.itemType} ${r.color} ${r.size}`,
+      qty: useStyle ? r.total : r.qty,
+    }))
+    .filter(r => r.qty > 0)
+    .sort((a, b) => (a.k < b.k ? -1 : a.k > b.k ? 1 : 0));
+}
+
+describe.each([22, 50, 100])('computePlans matches Python for total=%i', (total) => {
+  const expected = JSON.parse(fs.readFileSync(path.join(FX, `recommended_order_${total}.json`), 'utf8'));
+  const { industry, blended, effectiveTotal } = computePlans(feed, fxConfig, {
+    grandTotal: total, perTypeTotals: {}, perTypeSizeRestrictions: {},
+  });
+  test('industry matches', () => {
+    expect(norm(industry, false)).toEqual(norm(expected.industry, true));
+  });
+  test('blended matches', () => {
+    expect(norm(blended, false)).toEqual(norm(expected.blended, true));
+  });
+  test('effectiveTotal equals grand total', () => {
+    expect(effectiveTotal).toBe(total);
+  });
+});
+
+describe('per-type total override', () => {
+  test('reserves the override and splits the remainder', () => {
+    const { industry, effectiveTotal } = computePlans(feed, fxConfig, {
+      grandTotal: 50, perTypeTotals: { Tank: 10 }, perTypeSizeRestrictions: {},
+    });
+    const tankTotal = industry.filter(r => r.itemType === 'Tank').reduce((s, r) => s + r.qty, 0);
+    expect(tankTotal).toBe(10);
+    expect(effectiveTotal).toBe(50);
+  });
+});

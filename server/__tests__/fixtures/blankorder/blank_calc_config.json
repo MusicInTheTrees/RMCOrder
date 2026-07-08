@@ -1,0 +1,40 @@
+{
+  "_comment": "Config for blank_calc.py. All fields are dynamic - new colors that appear in the sales feed flow through automatically; only merges/exclusions/floors are declared here.",
+
+  "sizeCurves": {
+    "_comment": "Named size distributions (percent). 'industry' is the standard screen-print curve (~1:2:3:3:1 S:M:L:XL:2XL). Add per-style curves under styleCurves to override.",
+    "industry": { "XS": 1, "S": 10, "M": 23, "L": 31, "XL": 23, "2XL": 9, "3XL": 3 }
+  },
+  "styleCurves": {
+    "_comment": "Optional per-style curve name override, e.g. { \"Youth Shirt\": \"youth\" }. Falls back to 'industry'."
+  },
+  "blendWeight": 0.5,
+
+  "colorAliases": {
+    "_comment": "Map a sold color name to the blank color you actually order. Ash was a bulk-order color name; the orderable blank equivalent is Heather Gray.",
+    "Ash": "Heather Gray"
+  },
+  "excludedColors": ["Daisy"],
+
+  "_excludedSizes_help": "Sizes to never order, dropped from BOTH curves and renormalized. For 'no 3XL or higher' list every such size, e.g. [\"3XL\", \"4XL\", \"5XL\"]. Leave [] to allow all sizes.",
+  "excludedSizes": ["XS", "S", "3XL", "4XL", "5XL"],
+
+  "coreColors": ["Black", "White"],
+  "coreColorFloorPct": 0.1,
+
+  "styleLabels": {
+    "_comment": "Human labels for the canonical style keys the calculator derives (Unisex Shirt / Youth Shirt / Tank)."
+  },
+  "styleSuppliers": {
+    "Unisex Shirt": "M&O 4800",
+    "Youth Shirt": "M&O 4850",
+    "Tank": "Tultex S105"
+  },
+
+  "_manualHistory_help": "Optional extra sales history to fold in alongside the feed. Each row: itemType (Shirt/Tank), style (UM/Y, or blank for tanks), color, size, unitsSold. Example: { \"itemType\": \"Shirt\", \"style\": \"UM\", \"color\": \"Navy\", \"size\": \"L\", \"unitsSold\": 3 }",
+  "_email_help": "Optional fields for the email draft (recommended_order_<N>_email.md). Leave blank to use [placeholders] you fill in by hand.",
+  "emailRecipient": "",
+  "emailSignoff": "",
+
+  "manualHistory": []
+}

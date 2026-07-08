@@ -143,4 +143,67 @@ function curveFor(style, mode, observedSizes, config, perTypeSizeRestrictions) {
   return result;
 }
 
-module.exports = { SIZE_ORDER, pyRound, allocate, styleKey, normalize, buildDemand, curveFor };
+function planRows(mode, styles, colors, sizes, config, opts) {
+  const grandTotal = Math.max(0, Math.trunc(Number(opts.grandTotal) || 0));
+  const perTypeTotals = opts.perTypeTotals || {};
+  const perTypeSizeRestrictions = opts.perTypeSizeRestrictions || {};
+
+  const excludedColors = new Set(config.excludedColors || []);
+  const core = (config.coreColors || []).filter(c => !excludedColors.has(c));
+  const floorPct = Number(config.coreColorFloorPct || 0);
+
+  const styleKeys = Object.keys(styles);
+  const overrides = {};
+  let fixed = 0;
+  for (const k of styleKeys) {
+    const v = perTypeTotals[k];
+    if (v != null && v !== '') {
+      overrides[k] = Math.max(0, Math.trunc(Number(v)));
+      fixed += overrides[k];
+    }
+  }
+  const remainderTotal = Math.max(0, grandTotal - fixed);
+  const nonOverridden = {};
+  for (const k of styleKeys) if (!(k in overrides)) nonOverridden[k] = styles[k];
+  const distributed = allocate(nonOverridden, remainderTotal);
+  const styleAlloc = { ...overrides };
+  for (const k of Object.keys(distributed)) styleAlloc[k] = (styleAlloc[k] || 0) + distributed[k];
+  const effectiveTotal = Object.values(styleAlloc).reduce((s, n) => s + n, 0);
+
+  const rows = [];
+  for (const sk of Object.keys(styleAlloc)) {
+    const sunits = styleAlloc[sk];
+    if (sunits <= 0) continue;
+    const colorWeights = { ...(colors[sk] || {}) };
+    for (const c of core) if (!(c in colorWeights)) colorWeights[c] = 0;
+    const floors = {};
+    if (floorPct > 0 && sunits > 0) for (const c of core) floors[c] = Math.max(1, pyRound(floorPct * sunits));
+    const colorAlloc = allocate(colorWeights, sunits, floors);
+    const curve = curveFor(sk, mode, sizes[sk] || {}, config, perTypeSizeRestrictions);
+    for (const color of Object.keys(colorAlloc)) {
+      const cunits = colorAlloc[color];
+      if (cunits <= 0) continue;
+      const sizeAlloc = allocate(curve, cunits);
+      for (const size of Object.keys(sizeAlloc)) {
+        const q = sizeAlloc[size];
+        if (q <= 0) continue;
+        rows.push({ itemType: sk, color, size, qty: q });
+      }
+    }
+  }
+  rows.sort((a, b) =>
+    (a.itemType < b.itemType ? -1 : a.itemType > b.itemType ? 1 : 0) ||
+    (b.qty - a.qty) ||
+    (a.color < b.color ? -1 : a.color > b.color ? 1 : 0) ||
+    ((SIZE_ORDER[a.size] ?? 99) - (SIZE_ORDER[b.size] ?? 99)));
+  return { rows, effectiveTotal };
+}
+
+function computePlans(feed, config, opts) {
+  const { styles, colors, sizes } = buildDemand(feed, config);
+  const ind = planRows('industry', styles, colors, sizes, config, opts);
+  const bl = planRows('blended', styles, colors, sizes, config, opts);
+  return { industry: ind.rows, blended: bl.rows, effectiveTotal: ind.effectiveTotal };
+}
+
+module.exports = { SIZE_ORDER, pyRound, allocate, styleKey, normalize, buildDemand, curveFor, planRows, computePlans };
