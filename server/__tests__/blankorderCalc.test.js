@@ -1,4 +1,4 @@
-const { allocate, pyRound } = require('../blankorder/calc');
+const { allocate, pyRound, SIZE_ORDER } = require('../blankorder/calc');
 
 describe('pyRound (banker rounding)', () => {
   test('rounds half to even', () => {
@@ -7,6 +7,14 @@ describe('pyRound (banker rounding)', () => {
     expect(pyRound(2.5)).toBe(2);
     expect(pyRound(3.5)).toBe(4);
     expect(pyRound(2.4)).toBe(2);
+  });
+});
+
+describe('SIZE_ORDER', () => {
+  test('maps the nine sizes in canonical order', () => {
+    expect(SIZE_ORDER.XL).toBe(4);
+    expect(SIZE_ORDER['2XL']).toBe(5);
+    expect(Object.keys(SIZE_ORDER)).toEqual(['XS','S','M','L','XL','2XL','3XL','4XL','5XL']);
   });
 });
 
