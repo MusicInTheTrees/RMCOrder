@@ -70,3 +70,20 @@ describe('parity with the Python feed fixture', () => {
     expect(sortByToken(feed.velocity).map(strip)).toEqual(sortByToken(expected.velocity).map(strip));
   });
 });
+
+const { fromCsvUpload, fromSquare } = require('../blankorder/demandSource');
+
+describe('demandSource', () => {
+  const QTY = 'Current Quantity Rocky Meowtain Company LLC';
+  const header = `Token,Item Name,Variation Name,SKU,Option Value 1,Option Value 2,Price,${QTY}`;
+  test('fromCsvUpload returns a velocity feed', () => {
+    const feed = fromCsvUpload(
+      `${header}\nT1,Shirt | UM | Logo,,W1,Black,L,$25.00,10`,
+      `${header}\nT1,Shirt | UM | Logo,,W1,Black,L,$25.00,7`
+    );
+    expect(feed.velocity[0].unitsSold).toBe(3);
+  });
+  test('fromSquare is a Phase-2 stub', () => {
+    expect(() => fromSquare({})).toThrow(/Phase 2/i);
+  });
+});
