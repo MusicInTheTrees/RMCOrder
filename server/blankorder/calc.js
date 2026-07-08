@@ -67,7 +67,8 @@ function styleKey(itemType, style) {
 }
 
 function normalize(d) {
-  const total = Object.values(d).reduce((s, v) => s + v, 0);
+  const vals = Object.values(d || {});
+  const total = vals.reduce((s, v) => s + v, 0);
   if (!total) return {};
   const out = {};
   for (const [k, v] of Object.entries(d)) out[k] = v / total;

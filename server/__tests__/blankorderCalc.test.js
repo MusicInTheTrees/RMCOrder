@@ -78,6 +78,12 @@ describe('buildDemand', () => {
     expect(colors['Unisex Shirt']['Heather Gray']).toBe(4); // Ash -> Heather Gray
     expect(colors['Unisex Shirt'].Daisy).toBeUndefined();
   });
+  test('folds config.manualHistory into demand', () => {
+    const cfg = { ...CFG, manualHistory: [{ itemType: 'Shirt', style: 'UM', color: 'Navy', size: 'L', unitsSold: 3 }] };
+    const { styles, colors } = buildDemand({ velocity: [] }, cfg);
+    expect(styles['Unisex Shirt']).toBe(3);
+    expect(colors['Unisex Shirt'].Navy).toBe(3);
+  });
 });
 
 describe('curveFor', () => {
@@ -91,5 +97,12 @@ describe('curveFor', () => {
   test('per-type size restriction removes additional sizes', () => {
     const c = curveFor('Tank', 'industry', {}, CFG, { Tank: ['2XL'] });
     expect(c['2XL']).toBeUndefined();
+  });
+  test('blend mode mixes observed size mix with industry and renormalizes', () => {
+    const c = curveFor('Unisex Shirt', 'blend', { M: 10, L: 10 }, CFG, {});
+    expect(c.XS).toBeUndefined();            // still excluded
+    const sum = Object.values(c).reduce((s, v) => s + v, 0);
+    expect(sum).toBeCloseTo(1, 9);
+    expect(c.M).toBeGreaterThan(c.XL);       // observed pushes M above XL
   });
 });
