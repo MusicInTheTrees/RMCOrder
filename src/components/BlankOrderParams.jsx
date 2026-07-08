@@ -17,7 +17,9 @@ export default function BlankOrderParams({ config, stockBlankItems, onCompute })
   const [csvNew, setCsvNew] = useState('');
   const [grandTotal, setGrandTotal] = useState('');
   const [perTypeTotals, setPerTypeTotals] = useState({});
-  const [restrictions, setRestrictions] = useState({}); // { itemName: [excludedSize,...] }
+  const [restrictions, setRestrictions] = useState(
+    Object.fromEntries(stockBlankItems.map(i => [i.name, [...(config.excludedSizes || [])]]))
+  ); // { itemName: [excludedSize,...] }
   const [blendWeight, setBlendWeight] = useState(config.blendWeight ?? 0.5);
   const [floorPct, setFloorPct] = useState(config.coreColorFloorPct ?? 0);
   const [excludedColors, setExcludedColors] = useState((config.excludedColors || []).join(', '));
@@ -54,6 +56,7 @@ export default function BlankOrderParams({ config, stockBlankItems, onCompute })
       coreColorFloorPct: Number(floorPct),
       excludedColors: excludedColors.split(',').map(s => s.trim()).filter(Boolean),
       colorAliases: parseAliases(aliases),
+      excludedSizes: [],
     };
     // styleItemTypeMap: map each catalog stockBlanks item name to itself so the
     // calc style keys resolve to real catalog items where names match.
@@ -101,7 +104,7 @@ export default function BlankOrderParams({ config, stockBlankItems, onCompute })
               type="number" min="0" placeholder="auto"
               aria-label={`${name} total`}
               value={perTypeTotals[name] ?? ''}
-              onChange={e => setPerTypeTotals(p => ({ ...p, [name]: e.target.value }))}
+              onChange={e => setPerTypeTotals(p => ({ ...p, [name]: e.target.value === '' ? '' : Number(e.target.value) }))}
             />
             <span className="size-restrict">
               {ALL_SIZES.map(size => (
@@ -109,7 +112,7 @@ export default function BlankOrderParams({ config, stockBlankItems, onCompute })
                   <input
                     type="checkbox"
                     aria-label={`${name} exclude ${size}`}
-                    checked={(restrictions[name] || config.excludedSizes || []).includes(size)}
+                    checked={(restrictions[name] || []).includes(size)}
                     onChange={() => toggleSize(name, size)}
                   />{size}
                 </label>
