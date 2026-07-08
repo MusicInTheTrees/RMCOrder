@@ -55,4 +55,91 @@ function allocate(weights, total, floors) {
   return result;
 }
 
-module.exports = { SIZE_ORDER, pyRound, allocate };
+function styleKey(itemType, style) {
+  const it = (itemType || '').trim();
+  const st = (style || '').trim().toUpperCase();
+  if (it === 'Tank') return 'Tank';
+  if (it === 'Shirt') {
+    if (st === 'UM') return 'Unisex Shirt';
+    if (st === 'Y') return 'Youth Shirt';
+  }
+  return `${it} ${style || ''}`.trim() || '(unknown)';
+}
+
+function normalize(d) {
+  const total = Object.values(d).reduce((s, v) => s + v, 0);
+  if (!total) return {};
+  const out = {};
+  for (const [k, v] of Object.entries(d)) out[k] = v / total;
+  return out;
+}
+
+function cleanObj(obj) {
+  const out = {};
+  for (const [k, v] of Object.entries(obj || {})) if (!k.startsWith('_')) out[k] = v;
+  return out;
+}
+
+function buildDemand(feed, config) {
+  const aliases = cleanObj(config.colorAliases);
+  const excluded = new Set(config.excludedColors || []);
+  const styles = {}, colors = {}, sizes = {};
+  const rows = [...((feed && feed.velocity) || []), ...(config.manualHistory || [])];
+  for (const r of rows) {
+    if (!r.itemType) continue;
+    if (r.isApparel === false) continue;
+    if (r.isApparel == null && r.itemType !== 'Shirt' && r.itemType !== 'Tank') continue;
+    let color = (r.color || '').trim();
+    color = aliases[color] || color;
+    if (excluded.has(color)) continue;
+    const units = r.unitsSold || 0;
+    if (units <= 0) continue;
+    const sk = styleKey(r.itemType, r.style);
+    const size = (r.size || '').trim();
+    styles[sk] = (styles[sk] || 0) + units;
+    colors[sk] = colors[sk] || {};
+    if (color) colors[sk][color] = (colors[sk][color] || 0) + units;
+    sizes[sk] = sizes[sk] || {};
+    if (size) sizes[sk][size] = (sizes[sk][size] || 0) + units;
+  }
+  return { styles, colors, sizes };
+}
+
+function curveFor(style, mode, observedSizes, config, perTypeSizeRestrictions) {
+  const curves = config.sizeCurves || {};
+  const styleCurveNames = cleanObj(config.styleCurves);
+  const curveName = styleCurveNames[style] || 'industry';
+  const industry = normalize(cleanObj(curves[curveName] || {}));
+
+  let result;
+  if (mode === 'industry') {
+    result = industry;
+  } else {
+    const observed = normalize(observedSizes);
+    if (Object.keys(observed).length === 0) {
+      result = industry;
+    } else {
+      const w = Number(config.blendWeight != null ? config.blendWeight : 0.5);
+      const allSizes = new Set([...Object.keys(industry), ...Object.keys(observed)]);
+      const blended = {};
+      for (const s of allSizes) blended[s] = w * (observed[s] || 0) + (1 - w) * (industry[s] || 0);
+      result = normalize(blended);
+    }
+  }
+
+  const excluded = new Set([
+    ...(config.excludedSizes || []),
+    ...((perTypeSizeRestrictions && perTypeSizeRestrictions[style]) || []),
+  ]);
+  if (excluded.size) {
+    const filtered = {};
+    for (const [s, v] of Object.entries(result)) if (!excluded.has(s)) filtered[s] = v;
+    result = normalize(filtered);
+    if (Object.keys(result).length === 0) {
+      throw new Error(`Size restrictions removed every size for style '${style}'.`);
+    }
+  }
+  return result;
+}
+
+module.exports = { SIZE_ORDER, pyRound, allocate, styleKey, normalize, buildDemand, curveFor };

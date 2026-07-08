@@ -43,3 +43,53 @@ describe('allocate', () => {
     expect(allocate({ a: 1, b: 1 }, 0)).toEqual({ a: 0, b: 0 });
   });
 });
+
+const { styleKey, buildDemand, curveFor } = require('../blankorder/calc');
+
+const CFG = {
+  sizeCurves: { industry: { XS: 1, S: 10, M: 23, L: 31, XL: 23, '2XL': 9, '3XL': 3 } },
+  styleCurves: {},
+  blendWeight: 0.5,
+  colorAliases: { Ash: 'Heather Gray' },
+  excludedColors: ['Daisy'],
+  excludedSizes: ['XS', 'S', '3XL', '4XL', '5XL'],
+  coreColors: ['Black', 'White'],
+  coreColorFloorPct: 0.1,
+  manualHistory: [],
+};
+
+describe('styleKey', () => {
+  test('maps apparel to blank buckets', () => {
+    expect(styleKey('Shirt', 'UM')).toBe('Unisex Shirt');
+    expect(styleKey('Shirt', 'Y')).toBe('Youth Shirt');
+    expect(styleKey('Tank', '')).toBe('Tank');
+  });
+});
+
+describe('buildDemand', () => {
+  const feed = { velocity: [
+    { itemType: 'Shirt', style: 'UM', color: 'Ash', size: 'L', unitsSold: 4, isApparel: true },
+    { itemType: 'Shirt', style: 'UM', color: 'Daisy', size: 'M', unitsSold: 2, isApparel: true },
+    { itemType: 'Sticker', style: '', color: '', size: '', unitsSold: 9, isApparel: false },
+  ] };
+  test('applies aliases, drops excluded colors and non-apparel', () => {
+    const { styles, colors } = buildDemand(feed, CFG);
+    expect(styles['Unisex Shirt']).toBe(4);            // Daisy row dropped
+    expect(colors['Unisex Shirt']['Heather Gray']).toBe(4); // Ash -> Heather Gray
+    expect(colors['Unisex Shirt'].Daisy).toBeUndefined();
+  });
+});
+
+describe('curveFor', () => {
+  test('industry mode drops excluded sizes and renormalizes to 1', () => {
+    const c = curveFor('Unisex Shirt', 'industry', {}, CFG, {});
+    expect(c.XS).toBeUndefined();
+    expect(c['3XL']).toBeUndefined();
+    const sum = Object.values(c).reduce((s, v) => s + v, 0);
+    expect(sum).toBeCloseTo(1, 9);
+  });
+  test('per-type size restriction removes additional sizes', () => {
+    const c = curveFor('Tank', 'industry', {}, CFG, { Tank: ['2XL'] });
+    expect(c['2XL']).toBeUndefined();
+  });
+});
