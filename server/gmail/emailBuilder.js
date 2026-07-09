@@ -1,5 +1,32 @@
 const { compileLineItems } = require('./compileLineItems');
 
+const TYPE_PRIORITY = ['Unisex Shirt', 'Youth Shirt', 'Tank'];
+function typeRank(name) {
+  const i = TYPE_PRIORITY.indexOf(name);
+  return i === -1 ? TYPE_PRIORITY.length : i;
+}
+function compareTypes(a, b) {
+  return typeRank(a) - typeRank(b) ||
+    String(a).toLowerCase().localeCompare(String(b).toLowerCase());
+}
+
+const SIZE_ORDER = {};
+['XS', 'S', 'M', 'L', 'XL', '2XL', '3XL', '4XL', '5XL'].forEach((s, i) => { SIZE_ORDER[s] = i; });
+function minSizeRank(sizes) {
+  const ranks = Object.entries(sizes || {})
+    .filter(([, v]) => (v?.total ?? 0) > 0)
+    .map(([label]) => SIZE_ORDER[label] ?? 99);
+  return ranks.length ? Math.min(...ranks) : 99;
+}
+function blankType(item) {
+  return item.itemTypeName || item.apparelType || '';
+}
+function compareBlank(a, b) {
+  return compareTypes(blankType(a), blankType(b)) ||
+    String(a.color || '').toLowerCase().localeCompare(String(b.color || '').toLowerCase()) ||
+    minSizeRank(a.sizes) - minSizeRank(b.sizes);
+}
+
 function formatSizes(sizes) {
   return Object.entries(sizes || {})
     .filter(([, v]) => (v?.total ?? 0) > 0)
@@ -32,7 +59,7 @@ function buildEmailHtml(orderData, _settings, catalogByName = {}) {
   const allItems = orderData.lineItems || [];
   const printItems = compileLineItems(allItems.filter(i => !isBlank(i)));
   const groups = groupByCategory(printItems);
-  const blankItems = compileLineItems(allItems.filter(isBlank));
+  const blankItems = compileLineItems(allItems.filter(isBlank)).sort(compareBlank);
   const title = orderData.orderName
     ? `RMC Order: ${orderData.orderName} (${orderData.orderId})`
     : `${orderData.orderId} — Order Request`;
@@ -43,7 +70,8 @@ function buildEmailHtml(orderData, _settings, catalogByName = {}) {
     html += `<p><strong>Order Notes:</strong> ${orderData.notes}</p>`;
   }
 
-  for (const [category, items] of Object.entries(groups)) {
+  for (const category of Object.keys(groups).sort(compareTypes)) {
+    const items = groups[category];
     html += `<h3>${category}</h3>`;
     const catalogItem = catalogByName[(category || '').toLowerCase()];
     if (catalogItem?.publicNotes) {
@@ -100,7 +128,7 @@ function buildEmailPlainText(orderData, _settings, catalogByName = {}) {
   const allItems = orderData.lineItems || [];
   const printItems = compileLineItems(allItems.filter(i => !isBlank(i)));
   const groups = groupByCategory(printItems);
-  const blankItems = compileLineItems(allItems.filter(isBlank));
+  const blankItems = compileLineItems(allItems.filter(isBlank)).sort(compareBlank);
   const title = orderData.orderName
     ? `RMC Order: ${orderData.orderName} (${orderData.orderId})`
     : `${orderData.orderId} — Order Request`;
@@ -108,7 +136,8 @@ function buildEmailPlainText(orderData, _settings, catalogByName = {}) {
 
   if (orderData.notes) text += `Order Notes: ${orderData.notes}\n\n`;
 
-  for (const [category, items] of Object.entries(groups)) {
+  for (const category of Object.keys(groups).sort(compareTypes)) {
+    const items = groups[category];
     text += `${category}\n${'—'.repeat(category.length)}\n`;
     const catalogItem = catalogByName[(category || '').toLowerCase()];
     if (catalogItem?.publicNotes) text += `Note: ${catalogItem.publicNotes}\n`;
