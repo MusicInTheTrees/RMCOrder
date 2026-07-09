@@ -11,8 +11,8 @@ function order(state, lineItems) {
   return { orderId: 'RMC-x', state, lineItems };
 }
 
-test('COUNTED_STATES is sent and beyond', () => {
-  expect(COUNTED_STATES).toEqual(['sent', 'pending', 'paid', 'fulfilled', 'received']);
+test('COUNTED_STATES is sent and beyond, without paid', () => {
+  expect(COUNTED_STATES).toEqual(['sent', 'pending', 'fulfilled', 'received']);
 });
 
 test('sums total per Item Type x Color x Size across counted orders', () => {
@@ -21,7 +21,7 @@ test('sums total per Item Type x Color x Size across counted orders', () => {
       { itemTypeName: 'Unisex Tee', itemTypeId: 'tee1', color: 'Black',
         sizes: { L: { total: 10, inventory: 3 }, M: { total: 5, inventory: 0 } } },
     ]),
-    order('paid', [
+    order('fulfilled', [
       { itemTypeName: 'Unisex Tee', itemTypeId: 'tee1', color: 'Black',
         sizes: { L: { total: 2, inventory: 0 } } },
     ]),
@@ -123,4 +123,15 @@ test('breaks ties in total by itemType, then color, then size', () => {
   expect(shirts[0]).toEqual({ itemType: 'Unisex Tee', color: 'Blue', size: 'M', total: 5 });
   expect(shirts[1]).toEqual({ itemType: 'Unisex Tee', color: 'Green', size: 'L', total: 5 });
   expect(shirts[2]).toEqual({ itemType: 'Unisex Tee', color: 'Red', size: 'S', total: 5 });
+});
+
+test('a legacy paid order is counted (normalized to fulfilled)', () => {
+  const orders = [
+    order('paid', [
+      { itemTypeName: 'Unisex Tee', itemTypeId: 'tee1', color: 'Black',
+        sizes: { L: { total: 4, inventory: 0 } } },
+    ]),
+  ];
+  const { shirts } = aggregate(orders, catalog);
+  expect(shirts.find(r => r.color === 'Black' && r.size === 'L').total).toBe(4);
 });
