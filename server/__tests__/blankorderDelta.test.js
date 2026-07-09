@@ -40,6 +40,26 @@ describe('computeVelocity', () => {
     expect(feed.velocity[0].customOrder).toBe(true);
     expect(feed.velocity[0].unitsSold).toBe(5);
   });
+
+  test('tokenless rows are ignored and do not corrupt the result', () => {
+    // Old CSV: valid shirt row (T1) + tokenless rows
+    const oldCsvWithTokenless = `${header}\nT1,Shirt | UM | Logo,,W1,Black,L,$25.00,20\n,Sticker (no token),,W3,,,${'$1.00'},5\n,Tank (no token),,W4,Red,M,${'$20.00'},3`;
+    // New CSV: same valid shirt row (quantity dropped) + different tokenless rows
+    const newCsvWithTokenless = `${header}\nT1,Shirt | UM | Logo,,W1,Black,L,$25.00,15\n,Different (no token),,W5,,,${'$2.00'},10\n,Another (no token),,W6,Blue,S,${'$15.00'},7`;
+
+    const feed = computeVelocity(oldCsvWithTokenless, newCsvWithTokenless);
+
+    // Should only have the valid T1 entry (unitsSold = 5)
+    expect(feed.velocity.length).toBe(1);
+    expect(feed.velocity[0].token).toBe('T1');
+    expect(feed.velocity[0].unitsSold).toBe(5);
+    expect(feed.velocity[0].itemType).toBe('Shirt');
+
+    // Verify no entry with empty token exists
+    expect(feed.velocity.some(v => !v.token)).toBe(false);
+    expect(feed.velocity.some(v => v.token === '')).toBe(false);
+    expect(feed.meta.totalUnits).toBe(5);
+  });
 });
 
 describe('parity with the Python feed fixture', () => {

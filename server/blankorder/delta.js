@@ -67,7 +67,7 @@ function blankSpec(row) {
 function loadRows(csvText) {
   const { rows } = parseCsv(csvText);
   const byKey = {};
-  for (const r of rows) byKey[r[KEY] || ''] = r;
+  for (const r of rows) { const t = r[KEY]; if (t) byKey[t] = r; }
   return byKey;
 }
 
