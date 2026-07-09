@@ -82,12 +82,18 @@ export default function BlankOrderParams({ config, stockBlankItems, onCompute })
       <div className="field-group">
         <label htmlFor="csv-old">Older CSV</label>
         <textarea id="csv-old" value={csvOld} onChange={e => setCsvOld(e.target.value)} placeholder="Paste the older Square catalog export, or choose a file" />
-        <input type="file" accept=".csv" aria-label="Upload file for old export" onChange={readFileInto(setCsvOld)} />
+        <label className="file-upload-btn">
+          Upload CSV file
+          <input type="file" accept=".csv" hidden aria-label="Upload file for old export" onChange={readFileInto(setCsvOld)} />
+        </label>
       </div>
       <div className="field-group">
         <label htmlFor="csv-new">Newer CSV</label>
         <textarea id="csv-new" value={csvNew} onChange={e => setCsvNew(e.target.value)} placeholder="Paste the newer Square catalog export, or choose a file" />
-        <input type="file" accept=".csv" aria-label="Upload file for new export" onChange={readFileInto(setCsvNew)} />
+        <label className="file-upload-btn">
+          Upload CSV file
+          <input type="file" accept=".csv" hidden aria-label="Upload file for new export" onChange={readFileInto(setCsvNew)} />
+        </label>
       </div>
 
       <div className="field-group">

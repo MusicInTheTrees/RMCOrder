@@ -548,7 +548,7 @@ textarea {
   padding: 10px 14px;
   border: 1.5px solid var(--border);
   border-radius: 8px;
-  background: var(--bg);
+  background: #fff;
   color: var(--text-h);
   outline: none;
   resize: vertical;
@@ -614,7 +614,7 @@ textarea:focus {
   font-size: 15px;
   font-weight: 600;
   color: var(--text-h);
-  background: transparent;
+  background: #fff;
   border: none;
   border-bottom: 1.5px solid var(--border);
   border-radius: 0;
@@ -895,7 +895,7 @@ textarea:focus {
   padding: 10px 14px;
   border: 1.5px solid var(--border);
   border-radius: 8px;
-  background: var(--bg);
+  background: #fff;
   color: var(--text-h);
   outline: none;
   transition: border-color 0.15s;
@@ -1432,3 +1432,115 @@ input, textarea, select { background-color: #fff; color: #222; }
   display: flex; flex-direction: column; gap: 10px;
 }
 .delayed-exit-others { display: flex; flex-wrap: wrap; gap: 6px; }
+
+/* ===== Blank Order ===== */
+.blank-order-flow { width: 100%; box-sizing: border-box; padding: 16px 24px; text-align: left; }
+.blank-order-flow > button { margin-bottom: 12px; }
+.blank-order-params { display: flex; flex-direction: column; gap: 16px; text-align: left; }
+.blank-order-params h2 { margin-bottom: 4px; }
+
+/* File-picker styled to match the app's buttons */
+.file-upload-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  align-self: flex-start;
+  padding: 8px 16px;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 500;
+  border: 1.5px solid var(--accent-border);
+  border-radius: 8px;
+  color: var(--accent);
+  background: #fff;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+.file-upload-btn:hover { background: var(--accent-bg); border-color: var(--accent); }
+
+.per-type-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--border);
+}
+.per-type-row > strong { min-width: 130px; }
+.per-type-row > input { width: 90px; }
+.size-restrict { display: flex; flex-wrap: wrap; gap: 8px; }
+.size-check { display: inline-flex; align-items: center; gap: 3px; font-size: 13px; }
+.advanced-policy { display: flex; flex-direction: column; gap: 14px; padding: 12px 0; }
+
+/* ----- Blank Order table ----- */
+.blank-order-table { width: 100%; box-sizing: border-box; text-align: left; }
+
+.blank-order-scroll {
+  max-height: 60vh;
+  overflow: auto;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: #fff;
+}
+.blank-order-table table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+}
+.blank-order-table th,
+.blank-order-table td {
+  padding: 16px 14px;               /* taller rows: ~2x the default */
+  text-align: left;
+  border-bottom: 1px solid var(--border);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.blank-order-table thead { position: sticky; top: 0; z-index: 2; }
+.blank-order-table thead th {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-weight: 700;
+  color: var(--text-h);
+  background: var(--code-bg);
+}
+/* Action-button row sits directly over its columns */
+.bo-action-row td {
+  padding: 10px 8px;
+  border-bottom: none;
+  background: var(--code-bg);
+  vertical-align: bottom;
+}
+.bo-action-row button { width: 100%; white-space: nowrap; }
+
+.blank-order-table tbody tr:nth-child(even) { background: rgba(229, 234, 245, 0.4); }
+.blank-order-table tbody td input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 8px 10px;
+  border: 1.5px solid var(--border);
+  border-radius: 6px;
+  background: #fff;
+  color: var(--text-h);
+  font: inherit;
+  font-size: 15px;
+}
+.blank-order-table tbody td input[type="number"] { text-align: center; }
+.blank-order-table tbody td button { padding: 4px 10px; }
+
+.blank-order-table tfoot { position: sticky; bottom: 0; }
+.blank-order-table tfoot td {
+  background: var(--code-bg);
+  font-weight: 700;
+  color: var(--text-h);
+  border-top: 2px solid var(--border);
+  border-bottom: none;
+}
+
+.blank-order-table-footer-actions {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 16px;
+}
