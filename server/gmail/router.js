@@ -11,6 +11,7 @@ const { itemsForCustomer, sampleItems } = require('./customerItems');
 const { readStatusEmails, writeStatusEmails } = require('./statusEmailStore');
 const { listFiles, findFileByName, findFolderByName, copyFile, shareFileWithUser, uploadFileContent } = require('../drive/client');
 const { readRange } = require('../sheets/client');
+const { normalizeState } = require('../orders/state');
 const config = require('../config');
 
 const router = express.Router();
@@ -95,16 +96,18 @@ router.post('/draft', async (req, res) => {
 });
 
 async function loadOrder(sheetId) {
+  let order;
   try {
     const meta = await readRange(sheetId, 'Sheet1!A1:B10');
     const infoMap = Object.fromEntries(meta.map(([k, v]) => [k, v]));
     const orderId = infoMap['Order ID'] || '';
     if (orderId) {
       const cached = readOrderCache(orderId);
-      if (cached) return cached;
+      if (cached) order = cached;
     }
   } catch { /* fall through */ }
-  return readOrderFromSheet(sheetId);
+  if (!order) order = await readOrderFromSheet(sheetId);
+  return { ...order, state: normalizeState(order.state) };
 }
 
 const GMAIL_DISABLED_MSG = 'Gmail API is not enabled for this Google Cloud project. Enable it at console.developers.google.com → APIs & Services → Gmail API, then try again.';

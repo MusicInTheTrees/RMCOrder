@@ -7,12 +7,14 @@ const { findFileByName, uploadFileContent, downloadFileContent, createFolder } =
 const { readRange } = require('./client');
 const fs = require('fs');
 const config = require('../config');
+const { normalizeState } = require('../orders/state');
 
 const router = express.Router();
 router.use(requireAuth);
 
 router.get('/order/:sheetId', async (req, res) => {
   try {
+    const send = (order, extra = {}) => res.json({ ...order, ...extra, state: normalizeState(order.state) });
     // Step 1: quick Sheet1 read just for orderId
     let orderId = '';
     try {
@@ -24,7 +26,7 @@ router.get('/order/:sheetId', async (req, res) => {
     // Step 2a: local cache by orderId — primary, always complete
     if (orderId) {
       const cached = readOrderCache(orderId);
-      if (cached) return res.json({ ...cached, sheetId: req.params.sheetId });
+      if (cached) return send(cached, { sheetId: req.params.sheetId });
     }
 
     // Step 2b: local cache scan by sheetId — catches orderId mismatch / empty Sheet1
@@ -32,7 +34,7 @@ router.get('/order/:sheetId', async (req, res) => {
       for (const file of fs.readdirSync(config.ORDERS_CACHE_DIR)) {
         const data = readOrderCache(file.replace('.json', ''));
         if (data && data.sheetId === req.params.sheetId) {
-          return res.json({ ...data, sheetId: req.params.sheetId });
+          return send(data, { sheetId: req.params.sheetId });
         }
       }
     }
@@ -46,7 +48,7 @@ router.get('/order/:sheetId', async (req, res) => {
           if (jsonFile) {
             const content = await downloadFileContent(jsonFile.id);
             const driveOrder = JSON.parse(content);
-            return res.json({ ...driveOrder, sheetId: req.params.sheetId });
+            return send(driveOrder, { sheetId: req.params.sheetId });
           }
         }
       } catch (driveErr) {
@@ -62,14 +64,14 @@ router.get('/order/:sheetId', async (req, res) => {
       ...li,
       itemTypeId: li.itemTypeId || byName[(li.itemTypeName || '').toLowerCase()] || '',
     }));
-    res.json(order);
+    send(order);
   } catch (err) {
     // Step 5: last-resort offline scan
     if (fs.existsSync(config.ORDERS_CACHE_DIR)) {
       for (const file of fs.readdirSync(config.ORDERS_CACHE_DIR)) {
         const data = readOrderCache(file.replace('.json', ''));
         if (data && data.sheetId === req.params.sheetId) {
-          return res.json({ ...data, _fromCache: true });
+          return res.json({ ...data, _fromCache: true, state: normalizeState(data.state) });
         }
       }
     }
