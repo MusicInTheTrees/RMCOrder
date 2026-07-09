@@ -77,14 +77,28 @@ export default function BlankOrderTable({ plan, styleItemTypeMap, onBack }) {
 
   return (
     <div className="blank-order-table">
-      <div className="blank-order-table-actions">
-        <button className="btn-secondary" onClick={onBack}>← Parameters</button>
-        <button className="btn-secondary" onClick={() => fillFrom(indMap)}>Use Industry →</button>
-        <button className="btn-secondary" onClick={() => fillFrom(blMap)}>Use Blended →</button>
-      </div>
       {error && <div className="error-banner">{error}</div>}
+      <div className="blank-order-scroll">
       <table>
+        <colgroup>
+          <col style={{ width: '22%' }} />
+          <col style={{ width: '15%' }} />
+          <col style={{ width: '9%' }} />
+          <col style={{ width: '13%' }} />
+          <col style={{ width: '13%' }} />
+          <col style={{ width: '18%' }} />
+          <col style={{ width: '10%' }} />
+        </colgroup>
         <thead>
+          <tr className="bo-action-row">
+            <td><button className="btn-secondary" onClick={onBack}>← Parameters</button></td>
+            <td></td>
+            <td></td>
+            <td><button className="btn-secondary" onClick={() => fillFrom(indMap)}>Use Industry →</button></td>
+            <td><button className="btn-secondary" onClick={() => fillFrom(blMap)}>Use Blended →</button></td>
+            <td></td>
+            <td></td>
+          </tr>
           <tr>
             <th>Item Type</th><th>Color</th><th>Size</th>
             <th>Industry</th><th>Blended</th><th>Working</th><th></th>
@@ -124,10 +138,13 @@ export default function BlankOrderTable({ plan, styleItemTypeMap, onBack }) {
           </tr>
         </tfoot>
       </table>
-      <button className="btn-secondary" onClick={addCustomRow}>+ Add custom row</button>
-      <button className="btn-primary" disabled={!canGenerate} onClick={handleGenerate}>
-        {busy ? 'Generating…' : 'Generate Order'}
-      </button>
+      </div>
+      <div className="blank-order-table-footer-actions">
+        <button className="btn-secondary" onClick={addCustomRow}>+ Add custom row</button>
+        <button className="btn-primary" disabled={!canGenerate} onClick={handleGenerate}>
+          {busy ? 'Generating…' : 'Generate Order'}
+        </button>
+      </div>
     </div>
   );
 }
