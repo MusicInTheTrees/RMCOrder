@@ -18,7 +18,7 @@ test('stripEmoji removes emoji but keeps plain text', () => {
 });
 
 test('default subjects contain no emoji', () => {
-  for (const state of ['sent', 'shipped', 'delayed']) {
+  for (const state of ['sent', 'pending', 'fulfilled', 'shipped', 'delayed']) {
     expect(DEFAULT_TEMPLATES[state].subject).toBe(stripEmoji(DEFAULT_TEMPLATES[state].subject));
   }
 });
@@ -93,4 +93,25 @@ test('buildCustomerEmail omits Your items when none', () => {
   const { html } = buildCustomerEmail({ state: 'sent', template: DEFAULT_TEMPLATES.sent,
     customerName: 'Jane', genericName: 'G', orderName: 'O', items: [] });
   expect(html).not.toContain('Your items');
+});
+
+test('buildCustomerEmail renders the Pending Print state', () => {
+  const { subject, html } = buildCustomerEmail({
+    state: 'pending', template: DEFAULT_TEMPLATES.pending,
+    customerName: 'Jordan', genericName: 'Fellow Cat Lover', orderName: 'Summer Drop',
+  });
+  expect(subject).toBe('We\'re prepping your RMC order');
+  expect(html).toContain('Pending Print'); // status chrome label
+  expect(html).toContain('Hello Jordan');
+  expect(html).toContain('Summer Drop');
+});
+
+test('buildCustomerEmail renders the Printed state', () => {
+  const { subject, html } = buildCustomerEmail({
+    state: 'fulfilled', template: DEFAULT_TEMPLATES.fulfilled,
+    customerName: 'Jordan', genericName: 'Fellow Cat Lover', orderName: 'Summer Drop',
+  });
+  expect(subject).toBe('Your RMC order is printed!');
+  expect(html).toContain('Printed'); // status chrome label
+  expect(html).toContain('Hello Jordan');
 });
