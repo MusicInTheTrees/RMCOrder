@@ -1,8 +1,9 @@
+import { STATE_LABELS } from '../emailStates';
+
 export const STATE_COLORS = {
   building:  '#ef4444',
   sent:      '#f97316',
   pending:   '#eab308',
-  paid:      '#22c55e',
   fulfilled: '#3b82f6',
   received:  '#8b5cf6',
   shipped:   '#14b8a6',
@@ -16,7 +17,7 @@ export default function StateBadge({ state, dimmed = false }) {
       className="state-badge"
       style={{ backgroundColor: color, opacity: dimmed ? 0.45 : 1 }}
     >
-      {state}
+      {STATE_LABELS[state] || state}
     </span>
   );
 }
