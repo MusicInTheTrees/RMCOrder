@@ -3,6 +3,7 @@ const requireAuth = require('../middleware/requireAuth');
 const { listFiles, createFolder, createSpreadsheet, findFileByName, trashFile, downloadFileContent } = require('../drive/client');
 const { generateOrderId } = require('./idGenerator');
 const { writeOrderCache, readOrderCache, deleteOrderCache } = require('./cache');
+const { normalizeState } = require('./state');
 const { initOrderSheet } = require('../sheets/orderSheet');
 const config = require('../config');
 
@@ -48,7 +49,7 @@ router.get('/', async (_req, res) => {
         orderId,
         folderId: f.id,
         sheetId: cached ? cached.sheetId : null,
-        state: cached ? cached.state : null,
+        state: cached ? normalizeState(cached.state) : null,
         created: cached ? cached.created : null,
         orderName: cached ? (cached.orderName || '') : '',
       };

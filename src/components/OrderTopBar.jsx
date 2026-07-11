@@ -2,7 +2,7 @@ import { useState } from 'react';
 import StateBadge from './StateBadge';
 import ConfirmDialog from './ConfirmDialog';
 
-const STATE_ORDER = ['building', 'sent', 'pending', 'paid', 'fulfilled', 'received', 'shipped'];
+const STATE_ORDER = ['building', 'sent', 'pending', 'fulfilled', 'received', 'shipped'];
 
 export default function OrderTopBar({ order, onAdvanceState, onRegressState, onGenerateDraft, saving, onNameChange, onEnterDelayed, onExitDelayed }) {
   const [confirmState, setConfirmState] = useState(false);
@@ -12,8 +12,9 @@ export default function OrderTopBar({ order, onAdvanceState, onRegressState, onG
   const [exitOpen, setExitOpen] = useState(false);
 
   const isDelayed = order?.state === 'delayed';
-  const nextState = STATE_ORDER[STATE_ORDER.indexOf(order?.state) + 1];
-  const prevState = STATE_ORDER[STATE_ORDER.indexOf(order?.state) - 1];
+  const stateIndex = STATE_ORDER.indexOf(order?.state);
+  const nextState = stateIndex === -1 ? undefined : STATE_ORDER[stateIndex + 1];
+  const prevState = stateIndex === -1 ? undefined : STATE_ORDER[stateIndex - 1];
   const delayedFrom = order?.delayedFrom || 'sent';
   const otherStates = STATE_ORDER.filter(s => s !== delayedFrom);
 

@@ -59,10 +59,10 @@ afterEach(() => {
   if (fs.existsSync(TEST_TPL)) fs.unlinkSync(TEST_TPL);
 });
 
-test('GET templates returns defaults for all three states + generic name', async () => {
+test('GET templates returns defaults for all five states + generic name', async () => {
   const res = await request(getApp()).get('/gmail/customer-email/templates');
   expect(res.status).toBe(200);
-  expect(Object.keys(res.body.templates).sort()).toEqual(['delayed', 'sent', 'shipped']);
+  expect(Object.keys(res.body.templates).sort()).toEqual(['delayed', 'fulfilled', 'pending', 'sent', 'shipped']);
   expect(res.body.genericCustomerName).toBe('Fellow Cat Lover');
 });
 

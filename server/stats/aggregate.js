@@ -1,4 +1,5 @@
-const COUNTED_STATES = ['sent', 'pending', 'paid', 'fulfilled', 'received'];
+const { normalizeState } = require('../orders/state');
+const COUNTED_STATES = ['sent', 'pending', 'fulfilled', 'received'];
 
 function buildCatalogIndex(catalog) {
   const byId = new Map();
@@ -36,7 +37,7 @@ function aggregate(orders, catalog) {
   const otherMap = new Map();
 
   for (const order of orders || []) {
-    if (!COUNTED_STATES.includes(order.state)) continue;
+    if (!COUNTED_STATES.includes(normalizeState(order.state))) continue;
     for (const li of order.lineItems || []) {
       const itemType = li.itemTypeName || li.apparelType || '(unknown)';
       const color = li.color || '(no color)';

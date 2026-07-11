@@ -9,11 +9,15 @@ const HEADER_PATH = path.join(__dirname, '..', 'assets', 'email_header.jpg');
 // Chrome (fixed, not user-editable): status pill + short status label per state.
 const PILLS = {
   sent: '🖨️ In Production',
+  pending: '🖨️ Pending Print',
+  fulfilled: '👕 Printed',
   shipped: '📦 Shipped',
   delayed: '⏳ Delayed',
 };
 const STATUS_LABELS = {
   sent: 'In Production',
+  pending: 'Pending Print',
+  fulfilled: 'Printed',
   shipped: 'Shipped',
   delayed: 'Delayed',
 };
@@ -25,6 +29,14 @@ const DEFAULT_TEMPLATES = {
   sent: {
     subject: 'Your RMC order is being made',
     body: `Hello [customer name],\n\nYour order "[order name]" is now with our print shop getting made. We'll keep you posted as it moves along. Thanks for repping the Meowtain! 🐱`,
+  },
+  pending: {
+    subject: 'We\'re prepping your RMC order',
+    body: `Hello [customer name],\n\nYour order "[order name]" is with our print shop and we're lining up the blank garments for it. Once they're in and your order is printed, we'll let you know. Thanks for repping the Meowtain! 🐱`,
+  },
+  fulfilled: {
+    subject: 'Your RMC order is printed!',
+    body: `Hello [customer name],\n\nGreat news — your order "[order name]" is printed and moving toward shipment. We'll email again when it ships. Thanks for repping the Meowtain! 🐱`,
   },
   shipped: {
     subject: 'Your RMC order is on its way!',

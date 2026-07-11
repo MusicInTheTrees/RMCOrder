@@ -1,6 +1,6 @@
 const { readRange, writeRange, clearRange, addSheet, getSheetNames } = require('./client');
 
-const EMAIL_STATES = ['sent', 'shipped', 'delayed'];
+const EMAIL_STATES = ['sent', 'pending', 'fulfilled', 'shipped', 'delayed'];
 const CUSTOMER_HEADER = ['Name', 'Email', ...EMAIL_STATES.map(s => `Sent: ${s}`)];
 
 function customersToRows(customers) {
@@ -182,7 +182,7 @@ async function readOrderFromSheet(sheetId) {
 
   let customers = [];
   try {
-    const custRows = await readRange(sheetId, 'Customers!A1:F1000');
+    const custRows = await readRange(sheetId, 'Customers!A1:Z1000');
     customers = rowsToCustomers(custRows);
   } catch { /* legacy order without Customers tab */ }
 
