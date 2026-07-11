@@ -2,7 +2,7 @@ const fs = require('fs');
 const config = require('../config');
 const { DEFAULT_TEMPLATES, DEFAULT_GENERIC_NAME } = require('./customerEmailBuilder');
 
-const EMAIL_STATES = ['sent', 'shipped', 'delayed'];
+const EMAIL_STATES = ['sent', 'pending', 'fulfilled', 'shipped', 'delayed'];
 
 function defaults() {
   const templates = {};
