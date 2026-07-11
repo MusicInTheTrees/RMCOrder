@@ -1,18 +1,27 @@
-const { listCachedDesigns } = require('../drive/designsCache');
-const fs = require('fs');
+const os = require('os');
 const path = require('path');
+const fs = require('fs');
+
+// Isolate the test onto a throwaway temp dir instead of the real designs-cache
+// (the cleanup below unlinks every file in DESIGNS_CACHE_DIR — pointing that at
+// the real cache would wipe the user's downloaded designs).
+const mockCacheDir = path.join(os.tmpdir(), 'rmco-designs-cache-test');
+
+jest.mock('../config', () => ({
+  ...jest.requireActual('../config'),
+  DESIGNS_CACHE_DIR: mockCacheDir,
+}));
+
+const { listCachedDesigns } = require('../drive/designsCache');
 const config = require('../config');
 
 beforeEach(() => {
+  fs.rmSync(config.DESIGNS_CACHE_DIR, { recursive: true, force: true });
   fs.mkdirSync(config.DESIGNS_CACHE_DIR, { recursive: true });
 });
 
-afterEach(() => {
-  if (fs.existsSync(config.DESIGNS_CACHE_DIR)) {
-    fs.readdirSync(config.DESIGNS_CACHE_DIR).forEach(f =>
-      fs.unlinkSync(path.join(config.DESIGNS_CACHE_DIR, f))
-    );
-  }
+afterAll(() => {
+  fs.rmSync(config.DESIGNS_CACHE_DIR, { recursive: true, force: true });
 });
 
 test('listCachedDesigns returns empty array when cache dir is empty', () => {
