@@ -33,7 +33,7 @@ export function useOrder(sheetId, { onError } = {}) {
       .catch((err) => {
         setSyncPending(true);
         onError?.(err.message);
-        enqueue(() => saveOrderToSheet(sheetId, data).then(() => setSyncPending(false)));
+        enqueue(sheetId, () => saveOrderToSheet(sheetId, data).then(() => setSyncPending(false)));
       })
       .finally(() => setSaving(false));
   }, [sheetId, enqueue, onError]);

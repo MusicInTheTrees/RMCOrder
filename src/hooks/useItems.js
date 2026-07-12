@@ -10,6 +10,12 @@ export function useItems() {
     getItems().then(setCatalog).catch(console.error).finally(() => setLoading(false));
   }, []);
 
+  // Cancel pending debounced saves so a PUT can't fire after unmount.
+  useEffect(() => {
+    const timers = saveTimers.current;
+    return () => { Object.values(timers).forEach(clearTimeout); };
+  }, []);
+
   const createItem = useCallback(async () => {
     const item = await postItem({ name: 'New Item' });
     setCatalog(prev => ({ ...prev, items: [...prev.items, item] }));

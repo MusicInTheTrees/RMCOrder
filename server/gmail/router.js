@@ -17,19 +17,36 @@ const config = require('../config');
 const router = express.Router();
 router.use(requireAuth);
 
+// Read order — cache first so email reflects latest saved data.
+async function loadOrder(sheetId) {
+  let order;
+  try {
+    const meta = await readRange(sheetId, 'Sheet1!A1:B10');
+    const infoMap = Object.fromEntries(meta.map(([k, v]) => [k, v]));
+    const orderId = infoMap['Order ID'] || '';
+    if (orderId) {
+      const cached = readOrderCache(orderId);
+      if (cached) order = cached;
+    }
+  } catch { /* fall through */ }
+  if (!order) order = await readOrderFromSheet(sheetId);
+  return { ...order, state: normalizeState(order.state) };
+}
+
+const GMAIL_DISABLED_MSG = 'Gmail API is not enabled for this Google Cloud project. Enable it at console.developers.google.com → APIs & Services → Gmail API, then try again.';
+function emailError(res, err) {
+  const msg = err.message || '';
+  if (msg.includes('gmail.googleapis.com') && msg.includes('disabled')) {
+    return res.status(500).json({ error: GMAIL_DISABLED_MSG });
+  }
+  return res.status(500).json({ error: msg });
+}
+
 router.post('/draft', async (req, res) => {
   const { sheetId, draftId: existingDraftId } = req.body;
   if (!sheetId) return res.status(400).json({ error: 'sheetId required' });
   try {
-    // Read order — cache first so email reflects latest saved data
-    let orderData;
-    try {
-      const meta = await readRange(sheetId, 'Sheet1!A1:B10');
-      const infoMap = Object.fromEntries(meta.map(([k, v]) => [k, v]));
-      const orderId = infoMap['Order ID'] || '';
-      if (orderId) orderData = readOrderCache(orderId);
-    } catch { /* fall through */ }
-    if (!orderData) orderData = await readOrderFromSheet(sheetId);
+    const orderData = await loadOrder(sheetId);
 
     const settings = readSettings();
     const catalog = readCatalog();
@@ -66,16 +83,15 @@ router.post('/draft', async (req, res) => {
           }
         }
 
-        for (const [file, designNum] of Object.entries(designNumMap)) {
+        await Promise.all(Object.entries(designNumMap).map(([file, designNum]) => {
           const sourceId = sourceMap[file];
-          if (sourceId) {
-            const num = String(designNum).padStart(2, '0');
-            const destName = `${num}-${file}`;
-            await copyFile(sourceId, destName, designsFolder.id).catch(err =>
-              console.warn(`Could not copy ${file}:`, err.message)
-            );
-          }
-        }
+          if (!sourceId) return null;
+          const num = String(designNum).padStart(2, '0');
+          const destName = `${num}-${file}`;
+          return copyFile(sourceId, destName, designsFolder.id).catch(err =>
+            console.warn(`Could not copy ${file}:`, err.message)
+          );
+        }));
       }
     }
 
@@ -87,37 +103,9 @@ router.post('/draft', async (req, res) => {
     const draftId = await upsertDraft(settings.spewEmail, subject, html, plain, existingDraftId || null);
     res.json({ draftId });
   } catch (err) {
-    const msg = err.message || '';
-    if (msg.includes('gmail.googleapis.com') && msg.includes('disabled')) {
-      return res.status(500).json({ error: 'Gmail API is not enabled for this Google Cloud project. Enable it at console.developers.google.com → APIs & Services → Gmail API, then try again.' });
-    }
-    res.status(500).json({ error: msg });
+    emailError(res, err);
   }
 });
-
-async function loadOrder(sheetId) {
-  let order;
-  try {
-    const meta = await readRange(sheetId, 'Sheet1!A1:B10');
-    const infoMap = Object.fromEntries(meta.map(([k, v]) => [k, v]));
-    const orderId = infoMap['Order ID'] || '';
-    if (orderId) {
-      const cached = readOrderCache(orderId);
-      if (cached) order = cached;
-    }
-  } catch { /* fall through */ }
-  if (!order) order = await readOrderFromSheet(sheetId);
-  return { ...order, state: normalizeState(order.state) };
-}
-
-const GMAIL_DISABLED_MSG = 'Gmail API is not enabled for this Google Cloud project. Enable it at console.developers.google.com → APIs & Services → Gmail API, then try again.';
-function emailError(res, err) {
-  const msg = err.message || '';
-  if (msg.includes('gmail.googleapis.com') && msg.includes('disabled')) {
-    return res.status(500).json({ error: GMAIL_DISABLED_MSG });
-  }
-  return res.status(500).json({ error: msg });
-}
 
 // Editable status-email templates (subject + body per state) + generic name.
 router.get('/customer-email/templates', (_req, res) => {

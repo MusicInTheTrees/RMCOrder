@@ -1,42 +1,12 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useItems } from '../hooks/useItems';
 import { useBugLog } from '../context/BugLogContext';
 import { getInventoryStyles } from '../api/inventory';
 import { refreshBlankStats } from '../api/stats';
+import ActiveInactiveList from './ActiveInactiveList';
 import ColorPicker from './ColorPicker';
 import Toast from './Toast';
 import ConfirmDialog from './ConfirmDialog';
-
-function ColorColumn({ label, colors, onMove, onSwatchChange, onOpenPicker, moveLabel, moveSymbol, onDragStart, onDrop, onDelete }) {
-  return (
-    <div className="active-inactive-col">
-      <div className="active-inactive-col-header">{label}</div>
-      {colors.map((c, idx) => (
-        <div
-          key={c.name}
-          className="ai-row"
-          draggable={!!onDragStart}
-          onDragStart={onDragStart ? () => onDragStart(idx) : undefined}
-          onDragOver={onDragStart ? e => e.preventDefault() : undefined}
-          onDrop={onDrop ? () => onDrop(idx) : undefined}
-        >
-          {onDragStart && <span className="drag-handle">⠿</span>}
-          <span
-            className={`color-swatch${c.hex ? '' : ' no-color'}`}
-            style={c.hex ? { background: c.hex } : {}}
-            onClick={() => onOpenPicker(c.name, c.hex)}
-            title="Edit swatch"
-          />
-          <span className="ai-row-name">{c.name}</span>
-          <button className="ai-move-btn" title={moveLabel} onClick={() => onMove(c.name)}>
-            {moveSymbol}
-          </button>
-          <button className="ai-delete-btn" title="Delete color" onClick={() => onDelete(c.name)}>×</button>
-        </div>
-      ))}
-    </div>
-  );
-}
 
 export default function ItemsTab() {
   const { catalog, loading, createItem, updateItem, deleteItem, scrapeColors, pushToDrive, pullFromDrive } = useItems();
@@ -48,22 +18,10 @@ export default function ItemsTab() {
   const [refreshing, setRefreshing] = useState(false);
   const [expandedColor, setExpandedColor] = useState(null); // { name, hex }
   const [scrapeResult, setScrapeResult] = useState(null);
-  const dragSizeIdx = useRef(null);
-  const dragColorIdx = useRef(null);
-  const dragMethodIdx = useRef(null);
-  const [newColorName, setNewColorName] = useState('');
-  const [newSizeLabel, setNewSizeLabel] = useState('');
-  const [newMethodName, setNewMethodName] = useState('');
 
   useEffect(() => {
     getInventoryStyles().then(setStyleOptions).catch(() => {});
   }, []);
-
-  useEffect(() => {
-    setNewColorName('');
-    setNewSizeLabel('');
-    setNewMethodName('');
-  }, [selectedId]);
 
   const selectedItem = catalog.items.find(i => i.id === selectedId) || null;
 
@@ -129,122 +87,70 @@ export default function ItemsTab() {
     updateItem({ ...selectedItem, [field]: value });
   }
 
-  function moveColor(name, makeActive) {
+  // Replaces the collection at `field` (colors/sizes/decorationMethods) via updater(arr).
+  function setCollection(field, updater) {
     if (!selectedItem) return;
-    updateItem({
-      ...selectedItem,
-      colors: selectedItem.colors.map(c => c.name === name ? { ...c, active: makeActive } : c),
+    updateItem({ ...selectedItem, [field]: updater(selectedItem[field]) });
+  }
+
+  function toggleEntry(field, keyProp, key, makeActive) {
+    setCollection(field, arr => arr.map(x => x[keyProp] === key ? { ...x, active: makeActive } : x));
+  }
+
+  function deleteEntry(field, keyProp, key) {
+    setCollection(field, arr => arr.filter(x => x[keyProp] !== key));
+  }
+
+  // Colors/methods are ordered by array position: actives first, inactives appended.
+  function reorderByPosition(field, fromIdx, dropIdx) {
+    setCollection(field, arr => {
+      const active = arr.filter(x => x.active);
+      const inactive = arr.filter(x => !x.active);
+      const [moved] = active.splice(fromIdx, 1);
+      active.splice(dropIdx, 0, moved);
+      return [...active, ...inactive];
     });
   }
 
   function changeColorSwatch(name, hex) {
-    if (!selectedItem) return;
-    updateItem({
-      ...selectedItem,
-      colors: selectedItem.colors.map(c => c.name === name ? { ...c, hex } : c),
-    });
+    setCollection('colors', arr => arr.map(c => c.name === name ? { ...c, hex } : c));
   }
 
+  // Sizes carry an explicit `order` field, so activation and reorder maintain it.
   function moveSize(label, makeActive) {
     if (!selectedItem) return;
-    const activeSizes = selectedItem.sizes.filter(s => s.active && s.label !== label).sort((a, b) => a.order - b.order);
+    const activeSizes = selectedItem.sizes.filter(s => s.active && s.label !== label);
     const maxOrder = activeSizes.length > 0 ? Math.max(...activeSizes.map(s => s.order)) : -1;
-    updateItem({
-      ...selectedItem,
-      sizes: selectedItem.sizes.map(s => s.label === label
-        ? { ...s, active: makeActive, order: makeActive ? maxOrder + 1 : s.order }
-        : s
-      ),
+    setCollection('sizes', arr => arr.map(s => s.label === label
+      ? { ...s, active: makeActive, order: makeActive ? maxOrder + 1 : s.order }
+      : s
+    ));
+  }
+
+  function reorderSize(fromIdx, dropIdx) {
+    setCollection('sizes', arr => {
+      const active = arr.filter(s => s.active).sort((a, b) => a.order - b.order);
+      const [moved] = active.splice(fromIdx, 1);
+      active.splice(dropIdx, 0, moved);
+      const reordered = active.map((s, i) => ({ ...s, order: i }));
+      return arr.map(s => reordered.find(r => r.label === s.label) || s);
     });
   }
 
-  function reorderSize(dropIdx) {
-    if (!selectedItem || dragSizeIdx.current === null) return;
-    const fromIdx = dragSizeIdx.current;
-    dragSizeIdx.current = null;
-    if (fromIdx === dropIdx) return;
-    const active = [...selectedItem.sizes].filter(s => s.active).sort((a, b) => a.order - b.order);
-    const [moved] = active.splice(fromIdx, 1);
-    active.splice(dropIdx, 0, moved);
-    const reordered = active.map((s, i) => ({ ...s, order: i }));
-    updateItem({
-      ...selectedItem,
-      sizes: selectedItem.sizes.map(s => {
-        const found = reordered.find(r => r.label === s.label);
-        return found || s;
-      }),
-    });
+  function addColor(name) {
+    if (selectedItem.colors.find(c => c.name.toLowerCase() === name.toLowerCase())) return;
+    setCollection('colors', arr => [...arr, { name, hex: null, active: true }]);
   }
 
-  function reorderColor(dropIdx) {
-    if (!selectedItem || dragColorIdx.current === null) return;
-    const fromIdx = dragColorIdx.current;
-    dragColorIdx.current = null;
-    if (fromIdx === dropIdx) return;
-    const active = selectedItem.colors.filter(c => c.active);
-    const inactive = selectedItem.colors.filter(c => !c.active);
-    const [moved] = active.splice(fromIdx, 1);
-    active.splice(dropIdx, 0, moved);
-    updateItem({ ...selectedItem, colors: [...active, ...inactive] });
-  }
-
-  function reorderMethod(dropIdx) {
-    if (!selectedItem || dragMethodIdx.current === null) return;
-    const fromIdx = dragMethodIdx.current;
-    dragMethodIdx.current = null;
-    if (fromIdx === dropIdx) return;
-    const active = selectedItem.decorationMethods.filter(m => m.active);
-    const inactive = selectedItem.decorationMethods.filter(m => !m.active);
-    const [moved] = active.splice(fromIdx, 1);
-    active.splice(dropIdx, 0, moved);
-    updateItem({ ...selectedItem, decorationMethods: [...active, ...inactive] });
-  }
-
-  function addColor() {
-    const name = newColorName.trim();
-    if (!name || selectedItem.colors.find(c => c.name.toLowerCase() === name.toLowerCase())) return;
-    setNewColorName('');
-    updateItem({ ...selectedItem, colors: [...selectedItem.colors, { name, hex: null, active: true }] });
-  }
-
-  function addSize() {
-    const label = newSizeLabel.trim();
-    if (!label || selectedItem.sizes.find(s => s.label === label)) return;
-    setNewSizeLabel('');
+  function addSize(label) {
+    if (selectedItem.sizes.find(s => s.label === label)) return;
     const maxOrder = Math.max(-1, ...selectedItem.sizes.filter(s => s.active).map(s => s.order));
-    updateItem({ ...selectedItem, sizes: [...selectedItem.sizes, { label, active: true, order: maxOrder + 1 }] });
+    setCollection('sizes', arr => [...arr, { label, active: true, order: maxOrder + 1 }]);
   }
 
-  function addMethod() {
-    const name = newMethodName.trim();
-    if (!name || selectedItem.decorationMethods.find(m => m.name === name)) return;
-    setNewMethodName('');
-    updateItem({ ...selectedItem, decorationMethods: [...selectedItem.decorationMethods, { name, active: true }] });
-  }
-
-  function deleteColor(name) {
-    if (!selectedItem) return;
-    updateItem({ ...selectedItem, colors: selectedItem.colors.filter(c => c.name !== name) });
-  }
-
-  function deleteSize(label) {
-    if (!selectedItem) return;
-    updateItem({ ...selectedItem, sizes: selectedItem.sizes.filter(s => s.label !== label) });
-  }
-
-  function deleteMethod(name) {
-    if (!selectedItem) return;
-    updateItem({ ...selectedItem, decorationMethods: selectedItem.decorationMethods.filter(m => m.name !== name) });
-  }
-
-  function moveMethod(name, makeActive) {
-    if (!selectedItem) return;
-    updateItem({
-      ...selectedItem,
-      decorationMethods: selectedItem.decorationMethods.map(m =>
-        m.name === name ? { ...m, active: makeActive } : m
-      ),
-    });
+  function addMethod(name) {
+    if (selectedItem.decorationMethods.find(m => m.name === name)) return;
+    setCollection('decorationMethods', arr => [...arr, { name, active: true }]);
   }
 
   async function handleScrapeColors(id) {
@@ -346,42 +252,28 @@ export default function ItemsTab() {
                 </div>
               </div>
               {/* Colors section */}
-              <div className="active-inactive-section">
-                <div className="active-inactive-label">Colors</div>
-                <div className="active-inactive-cols">
-                  <ColorColumn
-                    label="Active (drag to reorder)"
-                    colors={selectedItem.colors.filter(c => c.active)}
-                    onMove={(name) => moveColor(name, false)}
-                    onSwatchChange={(name, hex) => changeColorSwatch(name, hex)}
-                    onOpenPicker={(name, hex) => setExpandedColor({ name, hex })}
-                    moveLabel="Move to inactive"
-                    moveSymbol="→"
-                    onDragStart={(idx) => { dragColorIdx.current = idx; }}
-                    onDrop={(idx) => reorderColor(idx)}
-                    onDelete={deleteColor}
+              <ActiveInactiveList
+                key={`colors-${selectedItem.id}`}
+                label="Colors"
+                itemLabel="color"
+                activeItems={selectedItem.colors.filter(c => c.active)}
+                inactiveItems={selectedItem.colors.filter(c => !c.active)}
+                getKey={c => c.name}
+                onToggle={(name, makeActive) => toggleEntry('colors', 'name', name, makeActive)}
+                onDelete={name => deleteEntry('colors', 'name', name)}
+                onReorder={(from, to) => reorderByPosition('colors', from, to)}
+                onAdd={addColor}
+                addPlaceholder="Color name..."
+                addPlacement="below"
+                renderLeading={c => (
+                  <span
+                    className={`color-swatch${c.hex ? '' : ' no-color'}`}
+                    style={c.hex ? { background: c.hex } : {}}
+                    onClick={() => setExpandedColor({ name: c.name, hex: c.hex })}
+                    title="Edit swatch"
                   />
-                  <ColorColumn
-                    label="Inactive"
-                    colors={selectedItem.colors.filter(c => !c.active)}
-                    onMove={(name) => moveColor(name, true)}
-                    onSwatchChange={(name, hex) => changeColorSwatch(name, hex)}
-                    onOpenPicker={(name, hex) => setExpandedColor({ name, hex })}
-                    moveLabel="Move to active"
-                    moveSymbol="←"
-                    onDelete={deleteColor}
-                  />
-                </div>
-                <div className="ai-add-row">
-                  <input
-                    className="ai-add-input"
-                    placeholder="Color name..."
-                    value={newColorName}
-                    onChange={e => setNewColorName(e.target.value)}
-                    onKeyDown={e => { if (e.key === 'Enter') addColor(); }}
-                  />
-                  <button className="btn-secondary ai-add-btn" onClick={addColor}>Add</button>
-                </div>
+                )}
+              >
                 {/* Scrape from URL */}
                 <div className="scrape-row">
                   <button className="btn-secondary" onClick={() => handleScrapeColors(selectedItem.id)}>
@@ -389,7 +281,7 @@ export default function ItemsTab() {
                   </button>
                   {scrapeResult && <span className="scrape-result">{scrapeResult}</span>}
                 </div>
-              </div>
+              </ActiveInactiveList>
               {/* Color picker open state managed per-color via expandedColor state */}
               {expandedColor && (
                 <div className="color-picker-popover">
@@ -404,94 +296,34 @@ export default function ItemsTab() {
                 </div>
               )}
               {/* Sizes section */}
-              <div className="active-inactive-section">
-                <div className="active-inactive-label">Sizes</div>
-                <div className="active-inactive-cols">
-                  <div className="active-inactive-col">
-                    <div className="active-inactive-col-header">Active (drag to reorder)</div>
-                    {[...selectedItem.sizes].filter(s => s.active).sort((a, b) => a.order - b.order).map((s, idx, arr) => (
-                      <div
-                        key={s.label}
-                        className="ai-row"
-                        draggable
-                        onDragStart={() => { dragSizeIdx.current = idx; }}
-                        onDragOver={e => e.preventDefault()}
-                        onDrop={() => reorderSize(idx)}
-                      >
-                        <span className="drag-handle">⠿</span>
-                        <span className="ai-row-name">{s.label}</span>
-                        <button className="ai-move-btn" title="Move size to inactive" onClick={() => moveSize(s.label, false)}>→</button>
-                        <button className="ai-delete-btn" title="Delete size" onClick={() => deleteSize(s.label)}>×</button>
-                      </div>
-                    ))}
-                    <div className="ai-add-row">
-                      <input
-                        className="ai-add-input"
-                        placeholder="Label..."
-                        value={newSizeLabel}
-                        onChange={e => setNewSizeLabel(e.target.value)}
-                        onKeyDown={e => { if (e.key === 'Enter') addSize(); }}
-                      />
-                      <button className="btn-secondary ai-add-btn" onClick={addSize}>Add</button>
-                    </div>
-                  </div>
-                  <div className="active-inactive-col">
-                    <div className="active-inactive-col-header">Inactive</div>
-                    {selectedItem.sizes.filter(s => !s.active).map(s => (
-                      <div key={s.label} className="ai-row">
-                        <span className="ai-row-name">{s.label}</span>
-                        <button className="ai-move-btn" title="Move size to active" onClick={() => moveSize(s.label, true)}>←</button>
-                        <button className="ai-delete-btn" title="Delete size" onClick={() => deleteSize(s.label)}>×</button>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
+              <ActiveInactiveList
+                key={`sizes-${selectedItem.id}`}
+                label="Sizes"
+                itemLabel="size"
+                activeItems={[...selectedItem.sizes].filter(s => s.active).sort((a, b) => a.order - b.order)}
+                inactiveItems={selectedItem.sizes.filter(s => !s.active)}
+                getKey={s => s.label}
+                onToggle={moveSize}
+                onDelete={label => deleteEntry('sizes', 'label', label)}
+                onReorder={reorderSize}
+                onAdd={addSize}
+                addPlaceholder="Label..."
+              />
 
               {/* Decoration Methods section */}
-              <div className="active-inactive-section">
-                <div className="active-inactive-label">Decoration Methods</div>
-                <div className="active-inactive-cols">
-                  <div className="active-inactive-col">
-                    <div className="active-inactive-col-header">Active (drag to reorder)</div>
-                    {selectedItem.decorationMethods.filter(m => m.active).map((m, idx) => (
-                      <div
-                        key={m.name}
-                        className="ai-row"
-                        draggable
-                        onDragStart={() => { dragMethodIdx.current = idx; }}
-                        onDragOver={e => e.preventDefault()}
-                        onDrop={() => reorderMethod(idx)}
-                      >
-                        <span className="drag-handle">⠿</span>
-                        <span className="ai-row-name">{m.name}</span>
-                        <button className="ai-move-btn" title="Move to inactive" onClick={() => moveMethod(m.name, false)}>→</button>
-                        <button className="ai-delete-btn" title="Delete method" onClick={() => deleteMethod(m.name)}>×</button>
-                      </div>
-                    ))}
-                    <div className="ai-add-row">
-                      <input
-                        className="ai-add-input"
-                        placeholder="Method name..."
-                        value={newMethodName}
-                        onChange={e => setNewMethodName(e.target.value)}
-                        onKeyDown={e => { if (e.key === 'Enter') addMethod(); }}
-                      />
-                      <button className="btn-secondary ai-add-btn" onClick={addMethod}>Add</button>
-                    </div>
-                  </div>
-                  <div className="active-inactive-col">
-                    <div className="active-inactive-col-header">Inactive</div>
-                    {selectedItem.decorationMethods.filter(m => !m.active).map(m => (
-                      <div key={m.name} className="ai-row">
-                        <span className="ai-row-name">{m.name}</span>
-                        <button className="ai-move-btn" title="Move to active" onClick={() => moveMethod(m.name, true)}>←</button>
-                        <button className="ai-delete-btn" title="Delete method" onClick={() => deleteMethod(m.name)}>×</button>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
+              <ActiveInactiveList
+                key={`methods-${selectedItem.id}`}
+                label="Decoration Methods"
+                itemLabel="method"
+                activeItems={selectedItem.decorationMethods.filter(m => m.active)}
+                inactiveItems={selectedItem.decorationMethods.filter(m => !m.active)}
+                getKey={m => m.name}
+                onToggle={(name, makeActive) => toggleEntry('decorationMethods', 'name', name, makeActive)}
+                onDelete={name => deleteEntry('decorationMethods', 'name', name)}
+                onReorder={(from, to) => reorderByPosition('decorationMethods', from, to)}
+                onAdd={addMethod}
+                addPlaceholder="Method name..."
+              />
               <div className="field-group">
                 <label>Public Notes</label>
                 <textarea

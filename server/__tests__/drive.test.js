@@ -28,12 +28,12 @@ test('listCachedDesigns returns empty array when cache dir is empty', () => {
   expect(listCachedDesigns()).toEqual([]);
 });
 
-test('listCachedDesigns returns image files with url', () => {
+test('listCachedDesigns returns image files with relative url', () => {
   fs.writeFileSync(path.join(config.DESIGNS_CACHE_DIR, 'test.png'), 'fake');
   fs.writeFileSync(path.join(config.DESIGNS_CACHE_DIR, 'other.txt'), 'fake');
   const designs = listCachedDesigns();
   expect(designs).toHaveLength(1);
   expect(designs[0].name).toBe('test.png');
-  expect(designs[0].url).toContain('test.png');
-  expect(designs[0].url).toContain('3001');
+  // Relative so the app works from any host (LAN devices), via the Vite proxy in dev.
+  expect(designs[0].url).toBe('/designs-cache/test.png');
 });

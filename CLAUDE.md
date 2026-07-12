@@ -88,7 +88,7 @@ The Blank Inventory Sheet (`1a_vMRuJPn19Y7E1z-hfV17Z-gD_63PNKAn0Rwx2tkSk`) is a 
 
 **Order ID format:** `RMC-[NNN]-[YYYY-MM-DD]` (3-digit zero-padded sequential + ISO date)
 
-**Order states** (manually advanced): `building` → `sent` → `pending` → `paid` → `fulfilled` → `received`
+**Order states** (manually advanced): `building` → `sent` → `pending` → `fulfilled` → `received` → `shipped`, plus a `delayed` side-state (tracks `delayedFrom`). Legacy `paid` migrates to `fulfilled` on read.
 
 **Line item sizes:** Each size (`XS/S/M/L/XL/XXL`) tracks `{ total, inventory }` — quantity to order = total − inventory.
 

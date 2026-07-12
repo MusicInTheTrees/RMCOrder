@@ -3,25 +3,34 @@ const { writeOrderToSheet, readOrderFromSheet, writeCustomersToSheet, EMAIL_STAT
 // Mock the sheets client
 jest.mock('../sheets/client', () => ({
   readRange: jest.fn(),
-  writeRange: jest.fn(),
-  clearRange: jest.fn(),
-  addSheet: jest.fn(),
+  addSheets: jest.fn(),
+  batchClearRanges: jest.fn(),
+  batchWriteRanges: jest.fn(),
   getSheetNames: jest.fn().mockResolvedValue(['Sheet1', 'Line Items', 'Designs', 'Customers']),
 }));
 
-const { readRange, writeRange, clearRange } = require('../sheets/client');
+const { readRange, addSheets, batchClearRanges, batchWriteRanges, getSheetNames } = require('../sheets/client');
+
+// Returns the values written to the range whose name contains `rangeSubstr`,
+// looking across all batchWriteRanges calls.
+function writtenValues(rangeSubstr) {
+  for (const call of batchWriteRanges.mock.calls) {
+    const entry = call[1].find(d => d.range.includes(rangeSubstr));
+    if (entry) return entry.values;
+  }
+  return null;
+}
 
 beforeEach(() => {
   jest.clearAllMocks();
-  writeRange.mockResolvedValue();
   readRange.mockResolvedValue();
-  clearRange.mockResolvedValue();
+  addSheets.mockResolvedValue();
+  batchClearRanges.mockResolvedValue();
+  batchWriteRanges.mockResolvedValue();
+  getSheetNames.mockResolvedValue(['Sheet1', 'Line Items', 'Designs', 'Customers']);
 });
 
 test('writeOrderToSheet writes compact sizes and methods', async () => {
-  clearRange.mockResolvedValue();
-  writeRange.mockResolvedValue();
-
   const order = {
     orderId: 'RMC-001-2026-06-28',
     orderName: 'Summer Drop',
@@ -46,9 +55,7 @@ test('writeOrderToSheet writes compact sizes and methods', async () => {
 
   await writeOrderToSheet('sheet123', order);
 
-  // Find the Line Items writeRange call
-  const liCall = writeRange.mock.calls.find(c => c[1].includes('Line Items'));
-  const rows = liCall[2];
+  const rows = writtenValues('Line Items');
   expect(rows[0]).toEqual(['#', 'Item Type', 'Color', 'Sizes', 'Front Method', 'Front Notes', 'Back Method', 'Back Notes', 'Item Type ID', 'Customer Email']);
   expect(rows[1][0]).toBe('01');
   expect(rows[1][1]).toBe('Unisex Tee');
@@ -116,8 +123,6 @@ test('EMAIL_STATES is the agreed set', () => {
 });
 
 test('writeOrderToSheet writes the Customers tab', async () => {
-  clearRange.mockResolvedValue();
-  writeRange.mockResolvedValue();
   const order = {
     orderId: 'RMC-002-2026-07-03', orderName: 'Drop', state: 'building',
     created: '2026-07-03', notes: '', sheetId: 's', lineItems: [],
@@ -127,9 +132,8 @@ test('writeOrderToSheet writes the Customers tab', async () => {
     ],
   };
   await writeOrderToSheet('s', order);
-  const call = writeRange.mock.calls.find(c => c[1].includes('Customers'));
-  expect(call).toBeTruthy();
-  const rows = call[2];
+  const rows = writtenValues('Customers');
+  expect(rows).toBeTruthy();
   expect(rows[0]).toEqual(['Name', 'Email', 'Sent: sent', 'Sent: pending', 'Sent: fulfilled', 'Sent: shipped', 'Sent: delayed']);
   expect(rows[1]).toEqual(['Jordan', 'jordan@x.com', '2026-07-03T00:00:00Z', '', '', '', '']);
   expect(rows[2]).toEqual(['', 'sam@x.com', '', '', '', '', '']);
@@ -168,15 +172,15 @@ test('readOrderFromSheet defaults customers to [] when tab missing', async () =>
 });
 
 test('writeCustomersToSheet writes only the Customers tab', async () => {
-  clearRange.mockResolvedValue();
-  writeRange.mockResolvedValue();
   await writeCustomersToSheet('s', [{ name: 'A', email: 'a@x.com', emailed: { shipped: '2026-07-03T00:00:00Z' } }]);
-  const call = writeRange.mock.calls.find(c => c[1].includes('Customers'));
-  expect(call[2][1]).toEqual(['A', 'a@x.com', '', '', '', '2026-07-03T00:00:00Z', '']);
+  const rows = writtenValues('Customers');
+  expect(rows[1]).toEqual(['A', 'a@x.com', '', '', '', '2026-07-03T00:00:00Z', '']);
+  for (const call of batchWriteRanges.mock.calls) {
+    expect(call[1].every(d => d.range.includes('Customers'))).toBe(true);
+  }
 });
 
 test('writeOrderToSheet writes Customer Email column and Delayed From', async () => {
-  clearRange.mockResolvedValue(); writeRange.mockResolvedValue();
   const order = {
     orderId: 'RMC-9', state: 'delayed', created: '2026-07-06', delayedFrom: 'sent', sheetId: 's',
     lineItems: [{ num: '01', itemTypeName: 'Tank', color: 'Gray', sizes: { M: { total: 1, inventory: 0 } },
@@ -184,11 +188,32 @@ test('writeOrderToSheet writes Customer Email column and Delayed From', async ()
       itemTypeId: 't1', customerEmail: 'jane@x.com' }],
   };
   await writeOrderToSheet('s', order);
-  const liCall = writeRange.mock.calls.find(c => c[1].includes('Line Items'));
-  expect(liCall[2][0]).toContain('Customer Email');
-  expect(liCall[2][1][liCall[2][0].indexOf('Customer Email')]).toBe('jane@x.com');
-  const infoCall = writeRange.mock.calls.find(c => c[1].includes('Sheet1'));
-  expect(infoCall[2]).toContainEqual(['Delayed From', 'sent']);
+  const liRows = writtenValues('Line Items');
+  expect(liRows[0]).toContain('Customer Email');
+  expect(liRows[1][liRows[0].indexOf('Customer Email')]).toBe('jane@x.com');
+  const infoRows = writtenValues('Sheet1');
+  expect(infoRows).toContainEqual(['Delayed From', 'sent']);
+});
+
+test('writeOrderToSheet issues one batch clear and one batch write for all four tabs', async () => {
+  const order = {
+    orderId: 'RMC-9', state: 'building', created: '2026-07-06', sheetId: 's', lineItems: [],
+  };
+  await writeOrderToSheet('s', order);
+  expect(batchClearRanges).toHaveBeenCalledTimes(1);
+  expect(batchWriteRanges).toHaveBeenCalledTimes(1);
+  const writtenRanges = batchWriteRanges.mock.calls[0][1].map(d => d.range).join(' ');
+  for (const tab of ['Sheet1', 'Line Items', 'Designs', 'Customers']) {
+    expect(writtenRanges).toContain(tab);
+  }
+});
+
+test('ensureSheets adds all missing tabs in a single call', async () => {
+  getSheetNames.mockResolvedValue(['Sheet1']);
+  const order = { orderId: 'RMC-9', state: 'building', created: '2026-07-06', sheetId: 's', lineItems: [] };
+  await writeOrderToSheet('s', order);
+  expect(addSheets).toHaveBeenCalledTimes(1);
+  expect(addSheets.mock.calls[0][1]).toEqual(['Line Items', 'Designs', 'Customers']);
 });
 
 test('readOrderFromSheet reads customerEmail and delayedFrom', async () => {

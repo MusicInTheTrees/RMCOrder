@@ -18,7 +18,13 @@ async function syncDesignsCache() {
 
   for (const file of images) {
     const destPath = path.join(config.DESIGNS_CACHE_DIR, file.name);
+    const driveMtime = new Date(file.modifiedTime || NaN).getTime();
+    if (driveMtime && fs.existsSync(destPath) && fs.statSync(destPath).mtimeMs >= driveMtime) {
+      continue;
+    }
     await downloadFile(file.id, destPath);
+    // Stamp the local copy with Drive's modifiedTime so future syncs can skip it.
+    if (driveMtime) fs.utimesSync(destPath, new Date(), new Date(driveMtime));
   }
 
   return images.length;
@@ -31,7 +37,8 @@ function listCachedDesigns() {
     .filter(name => /\.(png|jpe?g|gif|webp|svg)$/i.test(name))
     .map(name => ({
       name,
-      url: `http://localhost:${config.PORT}/designs-cache/${name}`,
+      // Relative so the app works from any host; Vite proxies /designs-cache in dev.
+      url: `/designs-cache/${name}`,
     }));
 }
 

@@ -27,10 +27,29 @@ async function clearRange(spreadsheetId, range) {
 }
 
 async function addSheet(spreadsheetId, title) {
+  await addSheets(spreadsheetId, [title]);
+}
+
+async function addSheets(spreadsheetId, titles) {
+  if (titles.length === 0) return;
   const sheets = getSheets();
   await sheets.spreadsheets.batchUpdate({
     spreadsheetId,
-    resource: { requests: [{ addSheet: { properties: { title } } }] },
+    resource: { requests: titles.map(title => ({ addSheet: { properties: { title } } })) },
+  });
+}
+
+async function batchClearRanges(spreadsheetId, ranges) {
+  const sheets = getSheets();
+  await sheets.spreadsheets.values.batchClear({ spreadsheetId, resource: { ranges } });
+}
+
+// data: [{ range, values }]
+async function batchWriteRanges(spreadsheetId, data, inputOption = 'USER_ENTERED') {
+  const sheets = getSheets();
+  await sheets.spreadsheets.values.batchUpdate({
+    spreadsheetId,
+    resource: { valueInputOption: inputOption, data },
   });
 }
 
@@ -40,4 +59,4 @@ async function getSheetNames(spreadsheetId) {
   return res.data.sheets.map(s => s.properties.title);
 }
 
-module.exports = { readRange, writeRange, clearRange, addSheet, getSheetNames };
+module.exports = { readRange, writeRange, clearRange, addSheet, addSheets, batchClearRanges, batchWriteRanges, getSheetNames };

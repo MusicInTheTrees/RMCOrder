@@ -70,7 +70,7 @@ test('clicking → on active size moves it to inactive', async () => {
   render(<MemoryRouter><SettingsScreen /></MemoryRouter>);
   await userEvent.click(screen.getByRole('button', { name: 'Items' }));
   await userEvent.click(await screen.findByText('Tee'));
-  const moveBtn = await screen.findByTitle('Move size to inactive');
+  const moveBtn = await screen.findByTitle('Move to inactive');
   await userEvent.click(moveBtn);
   await waitFor(() => expect(putItem).toHaveBeenCalledWith('item1', expect.objectContaining({
     sizes: expect.arrayContaining([expect.objectContaining({ label: 'M', active: false })]),

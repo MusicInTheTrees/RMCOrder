@@ -1,4 +1,4 @@
-const { readRange, writeRange, clearRange, addSheet, getSheetNames } = require('./client');
+const { readRange, addSheets, batchClearRanges, batchWriteRanges, getSheetNames } = require('./client');
 
 const EMAIL_STATES = ['sent', 'pending', 'fulfilled', 'shipped', 'delayed'];
 const CUSTOMER_HEADER = ['Name', 'Email', ...EMAIL_STATES.map(s => `Sent: ${s}`)];
@@ -43,8 +43,8 @@ function parseSizes(str) {
 
 async function writeCustomersToSheet(sheetId, customers) {
   await ensureSheets(sheetId);
-  await clearRange(sheetId, 'Customers!A1:Z1000');
-  await writeRange(sheetId, 'Customers!A1', customersToRows(customers), 'RAW');
+  await batchClearRanges(sheetId, ['Customers!A1:Z1000']);
+  await batchWriteRanges(sheetId, [{ range: 'Customers!A1', values: customersToRows(customers) }], 'RAW');
 }
 
 async function initOrderSheet(sheetId, orderData) {
@@ -53,15 +53,14 @@ async function initOrderSheet(sheetId, orderData) {
 
 async function ensureSheets(sheetId) {
   const existingNames = await getSheetNames(sheetId);
-  if (!existingNames.includes('Line Items')) await addSheet(sheetId, 'Line Items');
-  if (!existingNames.includes('Designs')) await addSheet(sheetId, 'Designs');
-  if (!existingNames.includes('Customers')) await addSheet(sheetId, 'Customers');
+  const missing = ['Line Items', 'Designs', 'Customers'].filter(t => !existingNames.includes(t));
+  if (missing.length > 0) await addSheets(sheetId, missing);
 }
 
 async function writeOrderToSheet(sheetId, orderData) {
   await ensureSheets(sheetId);
-  await clearRange(sheetId, 'Sheet1!A1:B11');
-  await writeRange(sheetId, 'Sheet1!A1:B10', [
+
+  const infoRows = [
     ['Order ID',     orderData.orderId],
     ['Order Name',   orderData.orderName || ''],
     ['State',        orderData.state],
@@ -72,9 +71,8 @@ async function writeOrderToSheet(sheetId, orderData) {
     ['Draft ID',     orderData.draftId || ''],
     ['Folder ID',    orderData.folderId || ''],
     ['Delayed From', orderData.delayedFrom || ''],
-  ]);
+  ];
 
-  await clearRange(sheetId, "'Line Items'!A1:Z1000");
   const liHeader = ['#', 'Item Type', 'Color', 'Sizes', 'Front Method', 'Front Notes', 'Back Method', 'Back Notes', 'Item Type ID', 'Customer Email'];
   const liRows = [liHeader];
   for (const item of orderData.lineItems || []) {
@@ -96,19 +94,26 @@ async function writeOrderToSheet(sheetId, orderData) {
       liRows.push([`${item.num}-inv`, '(from stock)', '', invStr, '', '', '', '']);
     }
   }
-  await writeRange(sheetId, "'Line Items'!A1", liRows, 'RAW');
 
-  await clearRange(sheetId, 'Designs!A1:Z1000');
   const dHeader = ['Line Item #', 'Design #', 'Design File', 'Placement'];
   const dRows = [dHeader];
   for (const item of orderData.lineItems || []) {
     for (const d of item.frontDesigns || []) dRows.push([item.num, d.designNum, d.file, 'Front']);
     for (const d of item.backDesigns || []) dRows.push([item.num, d.designNum, d.file, 'Back']);
   }
-  await writeRange(sheetId, 'Designs!A1', dRows, 'RAW');
 
-  await clearRange(sheetId, 'Customers!A1:Z1000');
-  await writeRange(sheetId, 'Customers!A1', customersToRows(orderData.customers), 'RAW');
+  await batchClearRanges(sheetId, [
+    'Sheet1!A1:B11',
+    "'Line Items'!A1:Z1000",
+    'Designs!A1:Z1000',
+    'Customers!A1:Z1000',
+  ]);
+  await batchWriteRanges(sheetId, [
+    { range: 'Sheet1!A1:B10',       values: infoRows },
+    { range: "'Line Items'!A1",     values: liRows },
+    { range: 'Designs!A1',          values: dRows },
+    { range: 'Customers!A1',        values: customersToRows(orderData.customers) },
+  ], 'RAW');
 }
 
 function isNewFormat(headerRow) {

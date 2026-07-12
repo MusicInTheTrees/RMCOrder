@@ -1,6 +1,6 @@
 const express = require('express');
 const requireAuth = require('../middleware/requireAuth');
-const { readRange, writeRange } = require('../sheets/client');
+const { readRange, batchWriteRanges } = require('../sheets/client');
 const config = require('../config');
 
 const router = express.Router();
@@ -9,9 +9,13 @@ router.use(requireAuth);
 // Sheet columns: In Stock | Item | Color | Style | Size (A-E, row 1 is header)
 const SHEET_ID = config.INVENTORY_SHEET_ID;
 
+// Raw rows, index i ↔ sheet row i+2. Keep gaps so row numbers stay correct.
 async function fetchRows() {
-  const rows = await readRange(SHEET_ID, 'A2:E10000');
-  return rows.filter(r => r.length >= 5 && r[0] !== '');
+  return readRange(SHEET_ID, 'A2:E10000');
+}
+
+function isDataRow(r) {
+  return Array.isArray(r) && r.length >= 5 && r[0] !== '';
 }
 
 function parseRow([inStock, item, color, style, size]) {
@@ -24,10 +28,22 @@ function parseRow([inStock, item, color, style, size]) {
   };
 }
 
+// First row index matching the entry's item/color/style/size, or -1.
+function findRowIndex(rows, entry) {
+  return rows.findIndex(r => {
+    if (!isDataRow(r)) return false;
+    const p = parseRow(r);
+    return p.item  === (entry.item || '').toLowerCase().trim() &&
+           p.color === (entry.color || '').toLowerCase().trim() &&
+           p.style === (entry.style || '').toLowerCase().trim() &&
+           p.size  === (entry.size || '').trim();
+  });
+}
+
 router.get('/', async (_req, res) => {
   try {
     const rows = await fetchRows();
-    res.json(rows.map(parseRow));
+    res.json(rows.filter(isDataRow).map(parseRow));
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -36,7 +52,7 @@ router.get('/', async (_req, res) => {
 router.get('/styles', async (_req, res) => {
   try {
     const rows = await fetchRows();
-    const styles = [...new Set(rows.map(r => parseRow(r).style))].filter(Boolean).sort();
+    const styles = [...new Set(rows.filter(isDataRow).map(r => parseRow(r).style))].filter(Boolean).sort();
     res.json(styles);
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -44,30 +60,33 @@ router.get('/styles', async (_req, res) => {
 });
 
 // Body: [{ item, color, style, size, qty }]
+// Decrements the first matching row per entry; clamps at 0 and reports shortfalls.
 router.post('/decrement', async (req, res) => {
   const decrements = req.body;
-  if (!Array.isArray(decrements) || decrements.length === 0) return res.json({ ok: true, updated: 0 });
+  if (!Array.isArray(decrements) || decrements.length === 0) return res.json({ ok: true, updated: 0, shortfalls: [] });
 
   try {
     const rows = await fetchRows();
-    let updated = 0;
+    const updates = [];
+    const shortfalls = [];
 
-    for (let i = 0; i < rows.length; i++) {
-      const parsed = parseRow(rows[i]);
-      const match = decrements.find(d =>
-        d.item.toLowerCase().trim() === parsed.item &&
-        d.color.toLowerCase().trim() === parsed.color &&
-        d.style.toLowerCase().trim() === parsed.style &&
-        d.size.trim() === parsed.size
-      );
-      if (match) {
-        const newVal = Math.max(0, parsed.inStock - match.qty);
-        await writeRange(SHEET_ID, `A${i + 2}`, [[String(newVal)]], 'RAW');
-        updated++;
+    for (const dec of decrements) {
+      const idx = findRowIndex(rows, dec);
+      if (idx === -1) continue;
+      const current = parseInt(rows[idx][0], 10) || 0;
+      const newVal = Math.max(0, current - dec.qty);
+      if (dec.qty > current) {
+        shortfalls.push({
+          item: dec.item, color: dec.color, style: dec.style, size: dec.size,
+          requested: dec.qty, applied: current, shortfall: dec.qty - current,
+        });
       }
+      rows[idx] = [String(newVal), ...rows[idx].slice(1)];
+      updates.push({ range: `A${idx + 2}`, values: [[String(newVal)]] });
     }
 
-    res.json({ ok: true, updated });
+    if (updates.length > 0) await batchWriteRanges(SHEET_ID, updates, 'RAW');
+    res.json({ ok: true, updated: updates.length, shortfalls });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -81,33 +100,27 @@ router.post('/increment', async (req, res) => {
 
   try {
     const rows = await fetchRows();
+    const updates = [];
     let updated = 0;
     let added = 0;
 
     for (const inc of increments) {
-      const idx = rows.findIndex(r => {
-        const p = parseRow(r);
-        return p.item  === inc.item.toLowerCase().trim() &&
-               p.color === inc.color.toLowerCase().trim() &&
-               p.style === inc.style.toLowerCase().trim() &&
-               p.size  === inc.size.trim();
-      });
-
+      const idx = findRowIndex(rows, inc);
       if (idx !== -1) {
         const current = parseInt(rows[idx][0], 10) || 0;
         const newVal = current + inc.qty;
-        await writeRange(SHEET_ID, `A${idx + 2}`, [[String(newVal)]], 'RAW');
         rows[idx] = [String(newVal), ...rows[idx].slice(1)];
+        updates.push({ range: `A${idx + 2}`, values: [[String(newVal)]] });
         updated++;
       } else {
-        const nextRow = rows.length + 2;
         const newRow = [String(inc.qty), inc.item, inc.color, inc.style, inc.size];
-        await writeRange(SHEET_ID, `A${nextRow}`, [newRow], 'RAW');
         rows.push(newRow);
+        updates.push({ range: `A${rows.length + 1}`, values: [newRow] });
         added++;
       }
     }
 
+    if (updates.length > 0) await batchWriteRanges(SHEET_ID, updates, 'RAW');
     res.json({ ok: true, updated, added });
   } catch (err) {
     res.status(500).json({ error: err.message });

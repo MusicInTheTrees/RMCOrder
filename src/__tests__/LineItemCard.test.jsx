@@ -46,6 +46,12 @@ test('shows confirm dialog before removing', async () => {
   expect(screen.getByText('Remove this line item?')).toBeInTheDocument();
 });
 
+test('design thumbnails use relative /designs-cache URLs', () => {
+  const item = { ...BASE_ITEM, frontDesigns: [{ designNum: '1', file: 'logo.png' }] };
+  render(<LineItemCard item={item} items={CATALOG_ITEMS} onChange={vi.fn()} onRemove={vi.fn()} onAddDesign={vi.fn()} />);
+  expect(screen.getByAltText('logo.png')).toHaveAttribute('src', '/designs-cache/logo.png');
+});
+
 test('legacy item with apparelType shows read-only type name', () => {
   const legacyItem = { ...BASE_ITEM, apparelType: 'Youth', itemTypeId: undefined };
   render(<LineItemCard item={legacyItem} items={CATALOG_ITEMS} onChange={vi.fn()} onRemove={vi.fn()} onAddDesign={vi.fn()} />);

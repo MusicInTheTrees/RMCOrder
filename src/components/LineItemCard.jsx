@@ -166,7 +166,7 @@ export default function LineItemCard({ item, items = [], onChange, onRemove, onA
         )}
         {(item.frontDesigns || []).map((d, i) => (
           <div key={i} className="design-row">
-            <img className="design-row-thumb" src={`http://localhost:3001/designs-cache/${d.file}`} alt={d.file} />
+            <img className="design-row-thumb" src={`/designs-cache/${d.file}`} alt={d.file} />
             <span>{d.designNum}. {d.file}</span>
             <button onClick={() => removeDesign('front', i)}>×</button>
           </div>
@@ -198,7 +198,7 @@ export default function LineItemCard({ item, items = [], onChange, onRemove, onA
         )}
         {(item.backDesigns || []).map((d, i) => (
           <div key={i} className="design-row">
-            <img className="design-row-thumb" src={`http://localhost:3001/designs-cache/${d.file}`} alt={d.file} />
+            <img className="design-row-thumb" src={`/designs-cache/${d.file}`} alt={d.file} />
             <span>{d.designNum}. {d.file}</span>
             <button onClick={() => removeDesign('back', i)}>×</button>
           </div>

@@ -11,7 +11,7 @@ async function listFiles(folderId, mimeTypeFilter = null) {
   const drive = getDrive();
   let q = `'${folderId}' in parents and trashed = false`;
   if (mimeTypeFilter) q += ` and mimeType = '${mimeTypeFilter}'`;
-  const res = await drive.files.list({ q, fields: 'files(id, name, mimeType)', pageSize: 200 });
+  const res = await drive.files.list({ q, fields: 'files(id, name, mimeType, modifiedTime)', pageSize: 200 });
   return res.data.files || [];
 }
 
