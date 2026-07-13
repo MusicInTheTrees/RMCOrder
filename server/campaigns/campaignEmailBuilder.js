@@ -1,5 +1,5 @@
 const {
-  applyPlaceholders, stripEmoji, renderBodyHtml, HEADER_CID, DEFAULT_GENERIC_NAME,
+  applyPlaceholders, stripEmoji, renderBodyHtml, HEADER_CID,
 } = require('../gmail/customerEmailBuilder');
 
 const UNSUB_TEXT = `Don't want these emails? Reply to this email with "unsubscribe" and we'll take you off the list.`;
