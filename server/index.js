@@ -13,10 +13,6 @@ fs.mkdirSync(config.ORDERS_CACHE_DIR, { recursive: true });
 app.use('/designs-cache', express.static(config.DESIGNS_CACHE_DIR));
 app.use('/assets', express.static(path.join(__dirname, 'assets')));
 
-// Sync designs on startup (non-blocking)
-const { syncDesignsCache } = require('./drive/designsCache');
-syncDesignsCache().catch(err => console.warn('Design sync skipped:', err.message));
-
 app.get('/health', (_req, res) => res.json({ ok: true }));
 
 // Routers mounted in later tasks (leave these commented out for now):
@@ -31,9 +27,15 @@ app.use('/buglog', require('./buglog/router'));
 app.use('/inventory', require('./inventory/router'));
 app.use('/stats', require('./stats/router'));
 app.use('/blankorder', require('./blankorder/router'));
+app.use('/emaillist', require('./emaillist/router'));
+app.use('/campaigns', require('./campaigns/router'));
 
 if (require.main === module) {
   app.listen(config.PORT, () => console.log(`Server running on port ${config.PORT}`));
+  // Sync designs on startup (non-blocking). Keep background work out of test imports.
+  require('./drive/designsCache').syncDesignsCache()
+    .catch(err => console.warn('Design sync skipped:', err.message));
+  require('./campaigns/scheduler').startScheduler();
 }
 
 module.exports = app;

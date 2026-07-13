@@ -25,6 +25,18 @@ vi.mock('../api/designs', () => ({
   listDesigns: vi.fn().mockResolvedValue([]),
   refreshDesigns: vi.fn().mockResolvedValue({}),
 }));
+vi.mock('../api/emailList', () => ({
+  getContacts: vi.fn().mockResolvedValue({ contacts: [] }),
+  addContact: vi.fn(),
+  updateContact: vi.fn(),
+  runBackfill: vi.fn(),
+}));
+vi.mock('../api/campaigns', () => ({
+  getJobs: vi.fn().mockResolvedValue({ jobs: [] }),
+  createJob: vi.fn(),
+  cancelJob: vi.fn(),
+  rescheduleJob: vi.fn(),
+}));
 
 test('Settings screen shows System and Items tabs', async () => {
   render(<MemoryRouter><SettingsScreen /></MemoryRouter>);
