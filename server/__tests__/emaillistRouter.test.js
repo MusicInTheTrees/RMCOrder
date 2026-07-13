@@ -49,8 +49,10 @@ test('POST /emaillist rejects invalid email and duplicates', async () => {
 
 test('PUT /emaillist/:email updates status; 404 for unknown', async () => {
   await request(app).post('/emaillist').send({ name: 'Ann', email: 'ann@x.com' });
+  syncEmailListSheet.mockClear();
   const res = await request(app).put('/emaillist/ann@x.com').send({ status: 'unsubscribed' });
   expect(res.status).toBe(200);
   expect(res.body.contact.status).toBe('unsubscribed');
+  expect(syncEmailListSheet).toHaveBeenCalled();
   expect((await request(app).put('/emaillist/none@x.com').send({ status: 'unsubscribed' })).status).toBe(404);
 });
