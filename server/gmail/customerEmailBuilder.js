@@ -141,6 +141,7 @@ module.exports = {
   DEFAULT_GENERIC_NAME,
   stripEmoji,
   applyPlaceholders,
+  renderBodyHtml,
   buildCustomerEmail,
   headerImage,
   HEADER_CID,
