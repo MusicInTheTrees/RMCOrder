@@ -31,6 +31,7 @@ app.use('/buglog', require('./buglog/router'));
 app.use('/inventory', require('./inventory/router'));
 app.use('/stats', require('./stats/router'));
 app.use('/blankorder', require('./blankorder/router'));
+app.use('/emaillist', require('./emaillist/router'));
 
 if (require.main === module) {
   app.listen(config.PORT, () => console.log(`Server running on port ${config.PORT}`));
