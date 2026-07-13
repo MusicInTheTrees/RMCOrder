@@ -8,6 +8,7 @@ const { readRange } = require('./client');
 const fs = require('fs');
 const config = require('../config');
 const { normalizeState } = require('../orders/state');
+const { captureOrderEmails } = require('../emaillist/capture');
 
 const router = express.Router();
 router.use(requireAuth);
@@ -85,6 +86,9 @@ router.put('/order/:sheetId', async (req, res) => {
 
     // Local cache first — fastest and most reliable, complete JSON
     writeOrderCache(orderData.orderId, orderData);
+
+    // Fire-and-forget: grow the central email list from this order's customers
+    captureOrderEmails(orderData);
 
     // Sheets write only on explicit full-sync (manual Save button) to avoid quota
     if (req.query.full === '1') {

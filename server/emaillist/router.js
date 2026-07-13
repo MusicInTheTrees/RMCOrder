@@ -28,4 +28,15 @@ router.put('/:email', (req, res) => {
   res.json({ contact });
 });
 
+router.post('/backfill', (_req, res) => {
+  const { readAllOrderCaches } = require('../orders/cache');
+  const { collectOrderEmails } = require('./capture');
+  const incoming = readAllOrderCaches()
+    .flatMap(order => collectOrderEmails(order))
+    .map(e => ({ ...e, source: 'backfill' }));
+  const { contacts, added } = upsertContacts(incoming);
+  fireSync();
+  res.json({ added: added.length, total: contacts.length });
+});
+
 module.exports = router;
