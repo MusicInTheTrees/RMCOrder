@@ -7,6 +7,7 @@ const DEFAULTS = {
   defaultBackDesign: '',
   defaultBackNotes: '',
   autoSendCustomerEmails: false,
+  emailListSheetId: '',
 };
 
 function readSettings() {
