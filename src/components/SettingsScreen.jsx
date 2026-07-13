@@ -7,6 +7,7 @@ import DesignPicker from './DesignPicker';
 import ItemsTab from './ItemsTab';
 import BugLogTab from './BugLogTab';
 import StatusEmailsTab from './StatusEmailsTab';
+import EmailListTab from './EmailListTab';
 import Toast from './Toast';
 
 export default function SettingsScreen() {
@@ -77,6 +78,10 @@ export default function SettingsScreen() {
           onClick={() => setTab('status')}
         >Status Emails</button>
         <button
+          className={`settings-tab${tab === 'emaillist' ? ' active' : ''}`}
+          onClick={() => setTab('emaillist')}
+        >Email List</button>
+        <button
           className={`settings-tab${tab === 'bugs' ? ' active' : ''}`}
           onClick={() => setTab('bugs')}
         >Bugs</button>
@@ -142,6 +147,7 @@ export default function SettingsScreen() {
 
       {tab === 'items' && <ItemsTab />}
       {tab === 'status' && <StatusEmailsTab />}
+      {tab === 'emaillist' && <EmailListTab />}
       {tab === 'bugs' && <BugLogTab />}
 
       <Toast message={toast} onDismiss={() => setToast(null)} />
