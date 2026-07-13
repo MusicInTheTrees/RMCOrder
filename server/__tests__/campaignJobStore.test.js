@@ -9,10 +9,16 @@ const realFile = config.CAMPAIGN_JOBS_FILE;
 beforeEach(() => { config.CAMPAIGN_JOBS_FILE = TEST_FILE; if (fs.existsSync(TEST_FILE)) fs.unlinkSync(TEST_FILE); });
 afterEach(() => { config.CAMPAIGN_JOBS_FILE = realFile; if (fs.existsSync(TEST_FILE)) fs.unlinkSync(TEST_FILE); });
 
-const { readJobs, createJob, getJob, updateJob } = require('../campaigns/jobStore');
+const { readJobs, writeJobs, createJob, getJob, updateJob } = require('../campaigns/jobStore');
 
 test('readJobs returns [] when file missing', () => {
   expect(readJobs()).toEqual([]);
+});
+
+test('writeJobs persists the supplied jobs', () => {
+  const jobs = [{ id: 'j1', status: 'scheduled' }];
+  writeJobs(jobs);
+  expect(readJobs()).toEqual(jobs);
 });
 
 test('createJob persists a scheduled job with defaults', () => {

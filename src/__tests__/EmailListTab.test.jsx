@@ -14,6 +14,8 @@ test('shows empty state and backfill button', async () => {
   render(<EmailListTab />);
   expect(await screen.findByText(/No contacts yet/i)).toBeInTheDocument();
   expect(screen.getByRole('button', { name: /Import from existing orders/i })).toBeInTheDocument();
+  expect(screen.getByPlaceholderText(/email@example.com/i)).toHaveAttribute('type', 'email');
+  expect(screen.getByPlaceholderText(/email@example.com/i)).toBeRequired();
 });
 
 test('renders contacts and toggles unsubscribe', async () => {

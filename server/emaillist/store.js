@@ -43,7 +43,7 @@ function updateContact(email, fields) {
   const contacts = readContacts();
   const contact = contacts.find(c => c.email.toLowerCase() === (email || '').toLowerCase());
   if (!contact) return null;
-  if (fields.name !== undefined) contact.name = String(fields.name).trim();
+  if (fields.name !== undefined) contact.name = String(fields.name ?? '').trim();
   if (fields.status === 'subscribed' || fields.status === 'unsubscribed') contact.status = fields.status;
   writeContacts(contacts);
   return contact;

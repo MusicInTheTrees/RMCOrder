@@ -26,8 +26,12 @@ test('POST /campaigns/jobs creates a scheduled blast', async () => {
 
 test('POST /campaigns/jobs validates input', async () => {
   expect((await request(app).post('/campaigns/jobs').send({ ...VALID, subject: '' })).status).toBe(400);
+  expect((await request(app).post('/campaigns/jobs').send({ ...VALID, subject: 42 })).status).toBe(400);
   expect((await request(app).post('/campaigns/jobs').send({ ...VALID, body: '' })).status).toBe(400);
+  expect((await request(app).post('/campaigns/jobs').send({ ...VALID, body: 42 })).status).toBe(400);
   expect((await request(app).post('/campaigns/jobs').send({ ...VALID, recipients: [] })).status).toBe(400);
+  expect((await request(app).post('/campaigns/jobs').send({ ...VALID, recipients: [null] })).status).toBe(400);
+  expect((await request(app).post('/campaigns/jobs').send({ ...VALID, recipients: [''] })).status).toBe(400);
   expect((await request(app).post('/campaigns/jobs').send({ ...VALID, recipients: 'everyone' })).status).toBe(400);
   expect((await request(app).post('/campaigns/jobs').send({ ...VALID, sendAt: 'tomorrow-ish' })).status).toBe(400);
 });

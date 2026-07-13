@@ -14,6 +14,7 @@ export default function EmailListTab() {
 
   async function handleAdd(e) {
     e.preventDefault();
+    setMsg('');
     try {
       await addContact({ name: name.trim(), email: email.trim() });
       setName(''); setEmail(''); setMsg('');
@@ -43,8 +44,8 @@ export default function EmailListTab() {
       </p>
 
       <form className="emaillist-add" onSubmit={handleAdd}>
-        <input placeholder="Name" value={name} onChange={e => setName(e.target.value)} />
-        <input placeholder="email@example.com" value={email} onChange={e => setEmail(e.target.value)} />
+        <input placeholder="Name" value={name} onChange={e => setName(e.target.value)} required />
+        <input type="email" placeholder="email@example.com" value={email} onChange={e => setEmail(e.target.value)} required />
         <button className="btn-primary" type="submit">Add</button>
       </form>
 

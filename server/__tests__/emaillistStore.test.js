@@ -61,3 +61,8 @@ test('updateContact edits name/status, returns null for unknown', () => {
   expect(updated.addedAt).not.toBe('HACK'); // only name/status updatable
   expect(updateContact('nobody@x.com', { status: 'unsubscribed' })).toBeNull();
 });
+
+test('updateContact treats a null name as empty instead of the string null', () => {
+  upsertContacts([{ name: 'Ann', email: 'ann@x.com', source: 'manual' }]);
+  expect(updateContact('ann@x.com', { name: null }).name).toBe('');
+});

@@ -1,5 +1,7 @@
 const express = require('express');
+const { readAllOrderCaches } = require('../orders/cache');
 const { readContacts, upsertContacts, updateContact } = require('./store');
+const { collectOrderEmails } = require('./capture');
 const { syncEmailListSheet } = require('./sheet');
 
 const router = express.Router();
@@ -29,8 +31,6 @@ router.put('/:email', (req, res) => {
 });
 
 router.post('/backfill', (_req, res) => {
-  const { readAllOrderCaches } = require('../orders/cache');
-  const { collectOrderEmails } = require('./capture');
   const incoming = readAllOrderCaches()
     .flatMap(order => collectOrderEmails(order))
     .map(e => ({ ...e, source: 'backfill' }));
