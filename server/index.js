@@ -35,6 +35,7 @@ app.use('/emaillist', require('./emaillist/router'));
 
 if (require.main === module) {
   app.listen(config.PORT, () => console.log(`Server running on port ${config.PORT}`));
+  require('./campaigns/scheduler').startScheduler();
 }
 
 module.exports = app;
