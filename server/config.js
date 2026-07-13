@@ -23,6 +23,7 @@ module.exports = {
   BLANK_ORDER_CONFIG_FILE: path.join(__dirname, 'blankorder', 'blankOrderConfig.json'),
   STATUS_EMAIL_FILE: path.join(__dirname, 'status-email-templates.json'),
   EMAIL_LIST_FILE: path.join(__dirname, 'email-list.json'),
+  CAMPAIGN_JOBS_FILE: path.join(__dirname, 'campaign-jobs.json'),
   INVENTORY_SHEET_ID: '1a_vMRuJPn19Y7E1z-hfV17Z-gD_63PNKAn0Rwx2tkSk',
   DRIVE: {
     TOP_LEVEL_FOLDER: '1OYG9ThPfJI0x13080vqW6sIY3c9Us4wk',

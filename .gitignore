@@ -28,6 +28,7 @@ server/tokens.json
 server/settings.json
 server/items-catalog.json
 server/email-list.json
+server/campaign-jobs.json
 server/.env
 server/node_modules/
 .superpowers/
