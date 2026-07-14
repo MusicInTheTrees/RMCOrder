@@ -49,4 +49,25 @@ function updateContact(email, fields) {
   return contact;
 }
 
-module.exports = { readContacts, writeContacts, upsertContacts, updateContact };
+function deleteContacts(emails) {
+  const targets = new Set((emails || []).map(e => String(e).toLowerCase()));
+  const contacts = readContacts();
+  const kept = contacts.filter(c => !targets.has(c.email.toLowerCase()));
+  const removed = contacts.length - kept.length;
+  if (removed > 0) writeContacts(kept);
+  return removed;
+}
+
+function updateContactsStatus(emails, status) {
+  if (status !== 'subscribed' && status !== 'unsubscribed') return 0;
+  const targets = new Set((emails || []).map(e => String(e).toLowerCase()));
+  const contacts = readContacts();
+  let updated = 0;
+  for (const c of contacts) {
+    if (targets.has(c.email.toLowerCase())) { c.status = status; updated++; }
+  }
+  if (updated > 0) writeContacts(contacts);
+  return updated;
+}
+
+module.exports = { readContacts, writeContacts, upsertContacts, updateContact, deleteContacts, updateContactsStatus };
