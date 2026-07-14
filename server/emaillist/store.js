@@ -70,4 +70,41 @@ function updateContactsStatus(emails, status) {
   return updated;
 }
 
-module.exports = { readContacts, writeContacts, upsertContacts, updateContact, deleteContacts, updateContactsStatus };
+// Merge a remote contact array (from the Drive copy) into the local list.
+// Union by lowercased email; unsubscribed wins; earliest addedAt (and its
+// source) kept — blank addedAt counts as later; non-empty name preferred,
+// local wins when both sides have one.
+function mergeContacts(remote) {
+  const contacts = readContacts();
+  const byEmail = new Map(contacts.map(c => [c.email.toLowerCase(), c]));
+  let added = 0;
+  for (const r of remote || []) {
+    const email = (r && typeof r.email === 'string' ? r.email : '').trim();
+    if (!email) continue;
+    const local = byEmail.get(email.toLowerCase());
+    if (!local) {
+      const contact = {
+        name: (r.name || '').trim(),
+        email,
+        status: r.status === 'unsubscribed' ? 'unsubscribed' : 'subscribed',
+        addedAt: r.addedAt || new Date().toISOString(),
+        source: r.source || 'manual',
+      };
+      contacts.push(contact);
+      byEmail.set(email.toLowerCase(), contact);
+      added++;
+      continue;
+    }
+    if (r.status === 'unsubscribed') local.status = 'unsubscribed';
+    const remoteAt = r.addedAt || '';
+    if (remoteAt && (!local.addedAt || remoteAt < local.addedAt)) {
+      local.addedAt = remoteAt;
+      local.source = r.source || local.source;
+    }
+    if (!local.name && r.name) local.name = String(r.name).trim();
+  }
+  writeContacts(contacts);
+  return { contacts, added };
+}
+
+module.exports = { readContacts, writeContacts, upsertContacts, updateContact, deleteContacts, updateContactsStatus, mergeContacts };

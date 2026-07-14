@@ -14,7 +14,7 @@ afterEach(() => {
   if (fs.existsSync(TEST_FILE)) fs.unlinkSync(TEST_FILE);
 });
 
-const { readContacts, upsertContacts, updateContact, deleteContacts, updateContactsStatus } = require('../emaillist/store');
+const { readContacts, upsertContacts, updateContact, deleteContacts, updateContactsStatus, mergeContacts } = require('../emaillist/store');
 
 test('readContacts returns [] when file missing', () => {
   expect(readContacts()).toEqual([]);
@@ -87,4 +87,57 @@ test('updateContactsStatus bulk-sets status case-insensitively and reports count
   expect(updateContactsStatus(['ann@x.com'], 'subscribed')).toBe(1);
   expect(readContacts().find(c => c.email === 'ann@x.com').status).toBe('subscribed');
   expect(updateContactsStatus(['ann@x.com'], 'bogus')).toBe(0);
+});
+
+test('mergeContacts appends remote-only contacts preserving their fields', () => {
+  upsertContacts([{ name: 'Ann', email: 'ann@x.com', source: 'manual' }]);
+  const { contacts, added } = mergeContacts([
+    { name: 'Cat', email: 'cat@x.com', status: 'unsubscribed', addedAt: '2026-01-05T00:00:00Z', source: 'backfill' },
+  ]);
+  expect(added).toBe(1);
+  expect(contacts).toHaveLength(2);
+  expect(contacts[1]).toMatchObject({
+    name: 'Cat', email: 'cat@x.com', status: 'unsubscribed',
+    addedAt: '2026-01-05T00:00:00Z', source: 'backfill',
+  });
+  expect(readContacts()).toHaveLength(2);
+});
+
+test('mergeContacts: unsubscribed wins in both directions, case-insensitively', () => {
+  upsertContacts([{ name: 'Ann', email: 'ann@x.com', source: 'manual' }]);
+  updateContact('ann@x.com', { status: 'unsubscribed' });
+  mergeContacts([{ email: 'ANN@X.COM', status: 'subscribed' }]);
+  expect(readContacts()[0].status).toBe('unsubscribed'); // local unsub survives remote sub
+
+  upsertContacts([{ name: 'Bo', email: 'bo@x.com', source: 'manual' }]);
+  mergeContacts([{ email: 'bo@x.com', status: 'unsubscribed' }]);
+  expect(readContacts().find(c => c.email === 'bo@x.com').status).toBe('unsubscribed');
+});
+
+test('mergeContacts keeps earliest addedAt with its source; blank addedAt counts as later', () => {
+  upsertContacts([{ name: 'Ann', email: 'ann@x.com', source: 'RMC-002' }]); // addedAt = now
+  mergeContacts([{ email: 'ann@x.com', addedAt: '2020-01-01T00:00:00Z', source: 'RMC-001' }]);
+  let ann = readContacts()[0];
+  expect(ann.addedAt).toBe('2020-01-01T00:00:00Z');
+  expect(ann.source).toBe('RMC-001');
+
+  mergeContacts([{ email: 'ann@x.com', addedAt: '', source: 'RMC-003' }]);
+  ann = readContacts()[0];
+  expect(ann.addedAt).toBe('2020-01-01T00:00:00Z'); // blank remote timestamp never wins
+  expect(ann.source).toBe('RMC-001');
+});
+
+test('mergeContacts fills empty local name, never overwrites one, skips malformed entries', () => {
+  upsertContacts([{ name: '', email: 'ann@x.com', source: 'manual' }]);
+  const { added } = mergeContacts([
+    { email: 'ann@x.com', name: 'Annie' },
+    { name: 'NoEmail' },
+    null,
+    { email: '   ' },
+  ]);
+  expect(added).toBe(0);
+  expect(readContacts()[0].name).toBe('Annie');
+
+  mergeContacts([{ email: 'ann@x.com', name: 'Other' }]);
+  expect(readContacts()[0].name).toBe('Annie');
 });
