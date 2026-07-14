@@ -10,7 +10,7 @@ vi.mock('../api/emailList', () => ({
   deleteContact: vi.fn(),
   bulkAction: vi.fn(),
   runBackfill: vi.fn(),
-  syncSheet: vi.fn(),
+  syncEmailList: vi.fn(),
 }));
 vi.mock('../api/campaigns', () => ({
   getJobs: vi.fn().mockResolvedValue({ jobs: [] }),

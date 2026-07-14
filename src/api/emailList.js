@@ -9,4 +9,4 @@ export const deleteContact = (email) =>
   apiFetch(`/emaillist/${encodeURIComponent(email)}`, { method: 'DELETE' });
 export const bulkAction = (emails, action) =>
   apiFetch('/emaillist/bulk', { method: 'POST', body: { emails, action } });
-export const syncSheet = () => apiFetch('/emaillist/sync', { method: 'POST' });
+export const syncEmailList = () => apiFetch('/emaillist/sync', { method: 'POST' });

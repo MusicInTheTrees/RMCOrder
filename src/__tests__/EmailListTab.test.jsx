@@ -2,7 +2,7 @@ import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import EmailListTab from '../components/EmailListTab';
 import {
-  getContacts, addContact, updateContact, deleteContact, bulkAction, runBackfill, syncSheet,
+  getContacts, addContact, updateContact, deleteContact, bulkAction, runBackfill, syncEmailList,
 } from '../api/emailList';
 
 vi.mock('../api/emailList', () => ({
@@ -12,7 +12,7 @@ vi.mock('../api/emailList', () => ({
   deleteContact: vi.fn().mockResolvedValue({ removed: 1 }),
   bulkAction: vi.fn().mockResolvedValue({ affected: 2 }),
   runBackfill: vi.fn().mockResolvedValue({ added: 2, total: 5 }),
-  syncSheet: vi.fn().mockResolvedValue({ ok: true }),
+  syncEmailList: vi.fn().mockResolvedValue({ ok: true, added: 3, total: 47 }),
 }));
 
 beforeEach(() => {
@@ -119,10 +119,10 @@ test('bulk delete confirms with a count and calls the bulk API', async () => {
     expect.arrayContaining(['ann@x.com', 'bo@x.com']), 'delete'));
 });
 
-test('sync button reports success', async () => {
+test('sync button merges with Drive and reports counts', async () => {
   render(<EmailListTab />);
   await screen.findByText(/No contacts yet/i);
-  await userEvent.click(screen.getByRole('button', { name: /Sync to Google Sheet/i }));
-  expect(await screen.findByText(/Synced to Google Sheet/i)).toBeInTheDocument();
-  expect(syncSheet).toHaveBeenCalled();
+  await userEvent.click(screen.getByRole('button', { name: /Sync with Drive/i }));
+  expect(await screen.findByText(/3 new contact\(s\) pulled in, 47 total/i)).toBeInTheDocument();
+  expect(syncEmailList).toHaveBeenCalled();
 });

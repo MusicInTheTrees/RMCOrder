@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import {
   getContacts, addContact, updateContact, deleteContact,
-  bulkAction, runBackfill, syncSheet,
+  bulkAction, runBackfill, syncEmailList,
 } from '../api/emailList';
 import ConfirmDialog from './ConfirmDialog';
 
@@ -75,8 +75,13 @@ export default function EmailListTab() {
 
   async function handleSync() {
     setMsg('Syncing…');
-    try { await syncSheet(); setMsg('Synced to Google Sheet ✓'); }
-    catch (err) { setMsg(`Sheet sync failed: ${err.message}`); }
+    try {
+      const r = await syncEmailList();
+      setMsg(`Synced — ${r.added} new contact(s) pulled in, ${r.total} total.`);
+      load();
+    } catch (err) {
+      setMsg(`Sync failed: ${err.message}`);
+    }
   }
 
   function askDelete(emails) {
@@ -126,9 +131,9 @@ export default function EmailListTab() {
 
       <div className="emaillist-toolbar">
         <button className="btn-secondary" onClick={handleBackfill}>Import from existing orders</button>
-        <button className="btn-secondary" onClick={handleSync}>Sync to Google Sheet</button>
+        <button className="btn-secondary" onClick={handleSync}>Sync with Drive</button>
         <span className="emaillist-autosave-note">
-          Changes save automatically; sync pushes the list to your Google Sheet.
+          Changes save locally right away; Sync merges with the shared Drive copy and updates the Google Sheet.
         </span>
       </div>
 
