@@ -1,8 +1,12 @@
 const express = require('express');
 const { readAllOrderCaches } = require('../orders/cache');
-const { readContacts, upsertContacts, updateContact, deleteContacts, updateContactsStatus } = require('./store');
+const { readContacts, upsertContacts, updateContact, deleteContacts, updateContactsStatus, mergeContacts } = require('./store');
 const { collectOrderEmails } = require('./capture');
 const { syncEmailListSheet } = require('./sheet');
+const config = require('../config');
+const { findFileByName, uploadFileContent, downloadFileContent } = require('../drive/client');
+
+const EMAIL_LIST_DRIVE_NAME = 'email-list.json';
 
 const router = express.Router();
 
@@ -10,6 +14,8 @@ const EMAIL_RE = /^\S+@\S+\.\S+$/;
 
 function fireSync() {
   syncEmailListSheet().catch(err => console.warn('Email list sheet sync skipped:', err.message));
+  uploadFileContent(EMAIL_LIST_DRIVE_NAME, JSON.stringify(readContacts(), null, 2), config.DRIVE.TOP_LEVEL_FOLDER)
+    .catch(err => console.warn('Email list Drive backup skipped:', err.message));
 }
 
 router.get('/', (_req, res) => res.json({ contacts: readContacts() }));
@@ -51,11 +57,22 @@ router.post('/bulk', (req, res) => {
   res.json({ affected });
 });
 
-// Unlike fireSync(), this endpoint awaits the sheet sync so the UI can report failures.
+// Full merge cycle: pull the Drive copy, merge into local, push the merged
+// list back, then rewrite the Sheet. Awaited so the UI gets honest results.
 router.post('/sync', async (_req, res) => {
   try {
+    let added = 0;
+    const file = await findFileByName(EMAIL_LIST_DRIVE_NAME, config.DRIVE.TOP_LEVEL_FOLDER);
+    if (file) {
+      const content = await downloadFileContent(file.id);
+      let remote = [];
+      try { remote = JSON.parse(content); } catch { remote = []; }
+      ({ added } = mergeContacts(Array.isArray(remote) ? remote : []));
+    }
+    const contacts = readContacts();
+    await uploadFileContent(EMAIL_LIST_DRIVE_NAME, JSON.stringify(contacts, null, 2), config.DRIVE.TOP_LEVEL_FOLDER);
     await syncEmailListSheet();
-    res.json({ ok: true });
+    res.json({ ok: true, added, total: contacts.length });
   } catch (err) {
     res.status(502).json({ error: err.message });
   }
