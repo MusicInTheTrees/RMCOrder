@@ -56,3 +56,42 @@ test('PUT /emaillist/:email updates status; 404 for unknown', async () => {
   expect(syncEmailListSheet).toHaveBeenCalled();
   expect((await request(app).put('/emaillist/none@x.com').send({ status: 'unsubscribed' })).status).toBe(404);
 });
+
+test('DELETE /emaillist/:email removes the contact; 404 for unknown', async () => {
+  await request(app).post('/emaillist').send({ name: 'Ann', email: 'ann@x.com' });
+  syncEmailListSheet.mockClear();
+  const res = await request(app).delete('/emaillist/ann@x.com');
+  expect(res.status).toBe(200);
+  expect(res.body.removed).toBe(1);
+  expect(syncEmailListSheet).toHaveBeenCalled();
+  expect((await request(app).get('/emaillist')).body.contacts).toEqual([]);
+  expect((await request(app).delete('/emaillist/ann@x.com')).status).toBe(404);
+});
+
+test('POST /emaillist/bulk handles subscribe, unsubscribe, delete and validates input', async () => {
+  await request(app).post('/emaillist').send({ name: 'Ann', email: 'ann@x.com' });
+  await request(app).post('/emaillist').send({ name: 'Bo', email: 'bo@x.com' });
+
+  let res = await request(app).post('/emaillist/bulk').send({ emails: ['ann@x.com', 'bo@x.com'], action: 'unsubscribe' });
+  expect(res.status).toBe(200);
+  expect(res.body.affected).toBe(2);
+
+  res = await request(app).post('/emaillist/bulk').send({ emails: ['ann@x.com'], action: 'subscribe' });
+  expect(res.body.affected).toBe(1);
+
+  res = await request(app).post('/emaillist/bulk').send({ emails: ['ann@x.com'], action: 'delete' });
+  expect(res.body.affected).toBe(1);
+  expect((await request(app).get('/emaillist')).body.contacts).toHaveLength(1);
+
+  expect((await request(app).post('/emaillist/bulk').send({ emails: [], action: 'delete' })).status).toBe(400);
+  expect((await request(app).post('/emaillist/bulk').send({ action: 'delete' })).status).toBe(400);
+  expect((await request(app).post('/emaillist/bulk').send({ emails: ['x@x.com'], action: 'zap' })).status).toBe(400);
+});
+
+test('POST /emaillist/sync reports success and failure honestly', async () => {
+  expect((await request(app).post('/emaillist/sync')).status).toBe(200);
+  syncEmailListSheet.mockRejectedValueOnce(new Error('Drive down'));
+  const res = await request(app).post('/emaillist/sync');
+  expect(res.status).toBe(502);
+  expect(res.body.error).toMatch(/Drive down/);
+});

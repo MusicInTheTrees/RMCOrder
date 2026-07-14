@@ -5,6 +5,7 @@ import LandingScreen from './components/LandingScreen';
 import OrdersList from './components/OrdersList';
 import OrderBuilder from './components/OrderBuilder';
 import SettingsScreen from './components/SettingsScreen';
+import EmailScreen from './components/EmailScreen';
 import BlankOrderFlow from './components/BlankOrderFlow';
 
 export default function App() {
@@ -16,6 +17,7 @@ export default function App() {
           <Route path="/orders" element={<OrdersList />} />
           <Route path="/orders/:orderId" element={<OrderBuilder />} />
           <Route path="/settings" element={<SettingsScreen />} />
+          <Route path="/email" element={<EmailScreen />} />
           <Route path="/blank-order" element={<BlankOrderFlow />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>

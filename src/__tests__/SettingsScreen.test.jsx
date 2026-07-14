@@ -25,23 +25,12 @@ vi.mock('../api/designs', () => ({
   listDesigns: vi.fn().mockResolvedValue([]),
   refreshDesigns: vi.fn().mockResolvedValue({}),
 }));
-vi.mock('../api/emailList', () => ({
-  getContacts: vi.fn().mockResolvedValue({ contacts: [] }),
-  addContact: vi.fn(),
-  updateContact: vi.fn(),
-  runBackfill: vi.fn(),
-}));
-vi.mock('../api/campaigns', () => ({
-  getJobs: vi.fn().mockResolvedValue({ jobs: [] }),
-  createJob: vi.fn(),
-  cancelJob: vi.fn(),
-  rescheduleJob: vi.fn(),
-}));
-
 test('Settings screen shows System and Items tabs', async () => {
   render(<MemoryRouter><SettingsScreen /></MemoryRouter>);
   expect(screen.getByRole('button', { name: 'System' })).toBeInTheDocument();
   expect(screen.getByRole('button', { name: 'Items' })).toBeInTheDocument();
+  expect(screen.queryByRole('button', { name: 'Email List' })).not.toBeInTheDocument();
+  expect(screen.queryByRole('button', { name: 'Campaigns' })).not.toBeInTheDocument();
 });
 
 test('clicking Items tab shows item catalog UI', async () => {

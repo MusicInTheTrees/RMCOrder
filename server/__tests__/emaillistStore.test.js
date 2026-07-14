@@ -14,7 +14,7 @@ afterEach(() => {
   if (fs.existsSync(TEST_FILE)) fs.unlinkSync(TEST_FILE);
 });
 
-const { readContacts, upsertContacts, updateContact } = require('../emaillist/store');
+const { readContacts, upsertContacts, updateContact, deleteContacts, updateContactsStatus } = require('../emaillist/store');
 
 test('readContacts returns [] when file missing', () => {
   expect(readContacts()).toEqual([]);
@@ -65,4 +65,26 @@ test('updateContact edits name/status, returns null for unknown', () => {
 test('updateContact treats a null name as empty instead of the string null', () => {
   upsertContacts([{ name: 'Ann', email: 'ann@x.com', source: 'manual' }]);
   expect(updateContact('ann@x.com', { name: null }).name).toBe('');
+});
+
+test('deleteContacts removes matches case-insensitively and reports count', () => {
+  upsertContacts([
+    { name: 'Ann', email: 'ann@x.com', source: 'manual' },
+    { name: 'Bo', email: 'bo@x.com', source: 'manual' },
+  ]);
+  expect(deleteContacts(['ANN@X.COM', 'missing@x.com'])).toBe(1);
+  expect(readContacts().map(c => c.email)).toEqual(['bo@x.com']);
+  expect(deleteContacts(['nobody@x.com'])).toBe(0);
+});
+
+test('updateContactsStatus bulk-sets status case-insensitively and reports count', () => {
+  upsertContacts([
+    { name: 'Ann', email: 'ann@x.com', source: 'manual' },
+    { name: 'Bo', email: 'bo@x.com', source: 'manual' },
+  ]);
+  expect(updateContactsStatus(['ann@x.com', 'BO@x.com', 'nope@x.com'], 'unsubscribed')).toBe(2);
+  expect(readContacts().every(c => c.status === 'unsubscribed')).toBe(true);
+  expect(updateContactsStatus(['ann@x.com'], 'subscribed')).toBe(1);
+  expect(readContacts().find(c => c.email === 'ann@x.com').status).toBe('subscribed');
+  expect(updateContactsStatus(['ann@x.com'], 'bogus')).toBe(0);
 });
