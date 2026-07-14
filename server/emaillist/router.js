@@ -1,6 +1,6 @@
 const express = require('express');
 const { readAllOrderCaches } = require('../orders/cache');
-const { readContacts, upsertContacts, updateContact } = require('./store');
+const { readContacts, upsertContacts, updateContact, deleteContacts, updateContactsStatus } = require('./store');
 const { collectOrderEmails } = require('./capture');
 const { syncEmailListSheet } = require('./sheet');
 
@@ -28,6 +28,37 @@ router.put('/:email', (req, res) => {
   if (!contact) return res.status(404).json({ error: 'Contact not found' });
   fireSync();
   res.json({ contact });
+});
+
+router.delete('/:email', (req, res) => {
+  const removed = deleteContacts([req.params.email]);
+  if (removed === 0) return res.status(404).json({ error: 'Contact not found' });
+  fireSync();
+  res.json({ removed });
+});
+
+router.post('/bulk', (req, res) => {
+  const { emails, action } = req.body || {};
+  if (!Array.isArray(emails) || emails.length === 0) {
+    return res.status(400).json({ error: 'No emails given' });
+  }
+  let affected;
+  if (action === 'delete') affected = deleteContacts(emails);
+  else if (action === 'subscribe') affected = updateContactsStatus(emails, 'subscribed');
+  else if (action === 'unsubscribe') affected = updateContactsStatus(emails, 'unsubscribed');
+  else return res.status(400).json({ error: 'Unknown action' });
+  fireSync();
+  res.json({ affected });
+});
+
+// Unlike fireSync(), this endpoint awaits the sheet sync so the UI can report failures.
+router.post('/sync', async (_req, res) => {
+  try {
+    await syncEmailListSheet();
+    res.json({ ok: true });
+  } catch (err) {
+    res.status(502).json({ error: err.message });
+  }
 });
 
 router.post('/backfill', (_req, res) => {
