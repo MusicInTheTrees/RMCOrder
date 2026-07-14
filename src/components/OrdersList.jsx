@@ -54,6 +54,7 @@ export default function OrdersList() {
       <header>
         <h1>RMC Ordering</h1>
         <div className="header-actions">
+          <button onClick={() => navigate('/email')}>✉ Email</button>
           <button onClick={() => navigate('/settings')}>⚙ Settings</button>
           <button className="btn-primary" onClick={() => setShowNewDialog(true)} disabled={loading}>
             {loading ? 'Creating...' : '+ New Order'}
