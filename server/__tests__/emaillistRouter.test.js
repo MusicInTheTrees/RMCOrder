@@ -147,3 +147,19 @@ test('mutations fire a background Drive JSON backup alongside the sheet sync', a
   expect(uploadFileContent).toHaveBeenCalledWith(
     'email-list.json', expect.any(String), config.DRIVE.TOP_LEVEL_FOLDER);
 });
+
+test('POST /emaillist/sync 502s when the Drive download fails', async () => {
+  findFileByName.mockResolvedValue({ id: 'f1', name: 'email-list.json' });
+  downloadFileContent.mockRejectedValueOnce(new Error('download broke'));
+  const res = await request(app).post('/emaillist/sync');
+  expect(res.status).toBe(502);
+  expect(res.body.error).toMatch(/download broke/);
+});
+
+test('POST /emaillist/sync 502s when the Drive upload fails', async () => {
+  findFileByName.mockResolvedValue(null);
+  uploadFileContent.mockRejectedValueOnce(new Error('upload broke'));
+  const res = await request(app).post('/emaillist/sync');
+  expect(res.status).toBe(502);
+  expect(res.body.error).toMatch(/upload broke/);
+});
