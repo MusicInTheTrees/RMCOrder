@@ -17,13 +17,41 @@ describe('OrderTopBar delayed controls', () => {
     expect(onEnterDelayed).toHaveBeenCalled();
   });
 
-  test('while delayed, exit chooser offers returning to delayedFrom', () => {
+  test('while delayed, exit chooser offers returning to delayedFrom by its label', () => {
     const onExitDelayed = vi.fn();
     render(<OrderTopBar {...baseProps} onExitDelayed={onExitDelayed}
       order={{ state: 'delayed', delayedFrom: 'sent', orderId: 'X' }} />);
     fireEvent.click(screen.getByRole('button', { name: /move out of delayed/i }));
-    fireEvent.click(screen.getByRole('button', { name: /return to .*sent/i }));
+    // Buttons show friendly labels, but the callback still gets the raw state id
+    fireEvent.click(screen.getByRole('button', { name: /return to .*in production/i }));
     expect(onExitDelayed).toHaveBeenCalledWith('sent');
+  });
+
+  test('exit chooser lists other states by label and passes the raw id', () => {
+    const onExitDelayed = vi.fn();
+    render(<OrderTopBar {...baseProps} onExitDelayed={onExitDelayed}
+      order={{ state: 'delayed', delayedFrom: 'sent', orderId: 'X' }} />);
+    fireEvent.click(screen.getByRole('button', { name: /move out of delayed/i }));
+    fireEvent.click(screen.getByRole('button', { name: 'Printed' }));
+    expect(onExitDelayed).toHaveBeenCalledWith('fulfilled');
+  });
+});
+
+describe('OrderTopBar transition dialogs use display labels', () => {
+  test('advance dialog names the next state by label, not raw id', () => {
+    const onAdvanceState = vi.fn();
+    render(<OrderTopBar {...baseProps} onAdvanceState={onAdvanceState} order={{ state: 'pending', orderId: 'X' }} />);
+    fireEvent.click(screen.getByRole('button', { name: /move to/i }));
+    expect(screen.getByText('Move order to "Printed"?')).toBeInTheDocument();
+    expect(screen.queryByText(/"fulfilled"/)).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Confirm' }));
+    expect(onAdvanceState).toHaveBeenCalledWith('fulfilled'); // raw id still flows to the API
+  });
+
+  test('move-back dialog names the previous state by label', () => {
+    render(<OrderTopBar {...baseProps} order={{ state: 'fulfilled', orderId: 'X' }} />);
+    fireEvent.click(screen.getByRole('button', { name: /move back/i }));
+    expect(screen.getByText('Move order back to "Pending Print"?')).toBeInTheDocument();
   });
 });
 

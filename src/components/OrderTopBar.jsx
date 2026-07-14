@@ -1,8 +1,10 @@
 import { useState } from 'react';
 import StateBadge from './StateBadge';
 import ConfirmDialog from './ConfirmDialog';
+import { STATE_LABELS } from '../emailStates';
 
 const STATE_ORDER = ['building', 'sent', 'pending', 'fulfilled', 'received', 'shipped'];
+const label = s => STATE_LABELS[s] || s;
 
 export default function OrderTopBar({ order, onAdvanceState, onRegressState, onGenerateDraft, saving, onNameChange, onEnterDelayed, onExitDelayed }) {
   const [confirmState, setConfirmState] = useState(false);
@@ -95,11 +97,11 @@ export default function OrderTopBar({ order, onAdvanceState, onRegressState, onG
           <div className="delayed-exit-dialog">
             <p>Move out of Delayed — which state?</p>
             <button className="btn-primary" onClick={() => { setExitOpen(false); onExitDelayed(delayedFrom); }}>
-              Return to “{delayedFrom}”
+              Return to “{label(delayedFrom)}”
             </button>
             <div className="delayed-exit-others">
               {otherStates.map(s => (
-                <button key={s} className="btn-secondary" onClick={() => { setExitOpen(false); onExitDelayed(s); }}>{s}</button>
+                <button key={s} className="btn-secondary" onClick={() => { setExitOpen(false); onExitDelayed(s); }}>{label(s)}</button>
               ))}
             </div>
             <button className="btn-secondary" onClick={() => setExitOpen(false)}>Cancel</button>
@@ -108,12 +110,12 @@ export default function OrderTopBar({ order, onAdvanceState, onRegressState, onG
       )}
 
       <ConfirmDialog
-        message={confirmState ? `Move order to "${nextState}"?` : null}
+        message={confirmState ? `Move order to "${label(nextState)}"?` : null}
         onConfirm={() => { setConfirmState(false); onAdvanceState(nextState); }}
         onCancel={() => setConfirmState(false)}
       />
       <ConfirmDialog
-        message={confirmRegress ? `Move order back to "${prevState}"?` : null}
+        message={confirmRegress ? `Move order back to "${label(prevState)}"?` : null}
         onConfirm={() => { setConfirmRegress(false); onRegressState(prevState); }}
         onCancel={() => setConfirmRegress(false)}
       />
