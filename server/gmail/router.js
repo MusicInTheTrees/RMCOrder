@@ -9,7 +9,7 @@ const { upsertDraft, sendEmail, createDraft } = require('./client');
 const { buildCustomerEmail, headerImage } = require('./customerEmailBuilder');
 const { itemsForCustomer, sampleItems } = require('./customerItems');
 const { readStatusEmails, writeStatusEmails } = require('./statusEmailStore');
-const { listFiles, findFileByName, findFolderByName, copyFile, shareFileWithUser, uploadFileContent } = require('../drive/client');
+const { listFiles, findFileByName, findFolderByName, copyFile, shareFileWithUser, uploadFileContent, downloadFileContent } = require('../drive/client');
 const { readRange } = require('../sheets/client');
 const { normalizeState } = require('../orders/state');
 const config = require('../config');
@@ -108,6 +108,8 @@ router.post('/draft', async (req, res) => {
 });
 
 // Editable status-email templates (subject + body per state) + generic name.
+const STATUS_TEMPLATES_DRIVE_NAME = 'status-email-templates.json';
+
 router.get('/customer-email/templates', (_req, res) => {
   res.json(readStatusEmails());
 });
@@ -119,13 +121,37 @@ router.put('/customer-email/templates', (req, res) => {
     // Fire-and-forget backup to the top-level Drive project folder.
     (async () => {
       try {
-        await uploadFileContent('status-email-templates.json', JSON.stringify(saved, null, 2), config.DRIVE.TOP_LEVEL_FOLDER);
+        await uploadFileContent(STATUS_TEMPLATES_DRIVE_NAME, JSON.stringify(saved, null, 2), config.DRIVE.TOP_LEVEL_FOLDER);
       } catch (e) {
         console.warn('Could not save status-email-templates.json to Drive:', e.message);
       }
     })();
   } catch (err) {
     res.status(500).json({ error: err.message });
+  }
+});
+
+// Awaited push/pull so the Settings UI gets honest results (the PUT route's
+// background upload can fail silently; these cannot).
+router.post('/customer-email/templates/push', async (_req, res) => {
+  try {
+    await uploadFileContent(STATUS_TEMPLATES_DRIVE_NAME, JSON.stringify(readStatusEmails(), null, 2), config.DRIVE.TOP_LEVEL_FOLDER);
+    res.json({ ok: true });
+  } catch (err) {
+    res.status(502).json({ error: err.message });
+  }
+});
+
+router.post('/customer-email/templates/pull', async (_req, res) => {
+  try {
+    const file = await findFileByName(STATUS_TEMPLATES_DRIVE_NAME, config.DRIVE.TOP_LEVEL_FOLDER);
+    if (!file) return res.status(404).json({ error: 'No status emails on Drive yet — save or push from the other machine first.' });
+    const content = await downloadFileContent(file.id);
+    let parsed;
+    try { parsed = JSON.parse(content); } catch { return res.status(502).json({ error: 'Drive copy is not valid JSON' }); }
+    res.json(writeStatusEmails(parsed));
+  } catch (err) {
+    res.status(502).json({ error: err.message });
   }
 });
 
