@@ -1546,7 +1546,7 @@ input, textarea, select { background-color: #fff; color: #222; }
 }
 
 /* ===== Email List & Campaign ===== */
-.emaillist-tab, .campaigns-tab {
+.emaillist-tab, .campaigns-tab, .status-emails-tab {
   display: flex;
   flex-direction: column;
   gap: 20px;

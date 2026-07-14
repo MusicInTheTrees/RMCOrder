@@ -14,3 +14,9 @@ export const getStatusEmailTemplates = () =>
 
 export const saveStatusEmailTemplates = (data) =>
   apiFetch('/gmail/customer-email/templates', { method: 'PUT', body: data });
+
+export const pullStatusEmailTemplates = () =>
+  apiFetch('/gmail/customer-email/templates/pull', { method: 'POST' });
+
+export const pushStatusEmailTemplates = () =>
+  apiFetch('/gmail/customer-email/templates/push', { method: 'POST' });

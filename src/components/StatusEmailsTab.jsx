@@ -1,5 +1,9 @@
 import { useState, useEffect } from 'react';
-import { getStatusEmailTemplates, saveStatusEmailTemplates } from '../api/customerEmails';
+import {
+  getStatusEmailTemplates, saveStatusEmailTemplates,
+  pullStatusEmailTemplates, pushStatusEmailTemplates,
+} from '../api/customerEmails';
+import ConfirmDialog from './ConfirmDialog';
 import { EMAIL_STATES, STATE_LABELS } from '../emailStates';
 
 export default function StatusEmailsTab() {
@@ -7,6 +11,7 @@ export default function StatusEmailsTab() {
   const [genericName, setGenericName] = useState('');
   const [msg, setMsg] = useState(null);
   const [saving, setSaving] = useState(false);
+  const [confirmPull, setConfirmPull] = useState(false);
 
   useEffect(() => {
     getStatusEmailTemplates()
@@ -33,8 +38,37 @@ export default function StatusEmailsTab() {
     }
   }
 
+  async function handlePush() {
+    setMsg(null);
+    try {
+      await pushStatusEmailTemplates();
+      setMsg('Pushed to Drive ✓');
+    } catch (e) {
+      setMsg(`Push failed: ${e.message}`);
+    }
+  }
+
+  async function handlePull() {
+    setConfirmPull(false);
+    setMsg(null);
+    try {
+      const d = await pullStatusEmailTemplates();
+      setTemplates(d.templates);
+      setGenericName(d.genericCustomerName || '');
+      setMsg('Pulled latest from Drive ✓');
+    } catch (e) {
+      setMsg(`Pull failed: ${e.message}`);
+    }
+  }
+
   return (
     <div className="status-emails-tab">
+      <div className="emaillist-toolbar">
+        <button className="btn-secondary" onClick={() => setConfirmPull(true)}>Pull from Drive</button>
+        <button className="btn-secondary" onClick={handlePush}>Push to Drive</button>
+        <span className="emaillist-autosave-note">Saving also backs up to Drive automatically.</span>
+      </div>
+
       <div className="placeholder-help">
         <div className="placeholder-help-title">Placeholders you can use in any subject or body:</div>
         <div><code>[customer name]</code> — replaced with each customer&apos;s name (or the generic name below when they have none).</div>
@@ -64,6 +98,14 @@ export default function StatusEmailsTab() {
         {saving ? 'Saving…' : 'Save Status Emails'}
       </button>
       {msg && <span className="save-confirm"> {msg}</span>}
+
+      {confirmPull && (
+        <ConfirmDialog
+          message="This replaces your local status emails with the shared Drive copy."
+          onConfirm={handlePull}
+          onCancel={() => setConfirmPull(false)}
+        />
+      )}
     </div>
   );
 }
