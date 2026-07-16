@@ -2,8 +2,8 @@ import { useState } from 'react';
 import StateBadge from './StateBadge';
 import ConfirmDialog from './ConfirmDialog';
 import { STATE_LABELS } from '../emailStates';
+import { STATE_ORDER } from '../orderStates';
 
-const STATE_ORDER = ['building', 'sent', 'pending', 'fulfilled', 'received', 'shipped'];
 const label = s => STATE_LABELS[s] || s;
 
 export default function OrderTopBar({ order, onAdvanceState, onRegressState, onGenerateDraft, saving, onNameChange, onEnterDelayed, onExitDelayed }) {

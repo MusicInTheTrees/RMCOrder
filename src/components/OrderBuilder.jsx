@@ -8,6 +8,7 @@ import { decrementInventory, incrementInventory } from '../api/inventory';
 import { useBugLog } from '../context/BugLogContext';
 import { useInventory } from '../hooks/useInventory';
 import OrderTopBar from './OrderTopBar';
+import StateFlow from './StateFlow';
 import LineItemCard from './LineItemCard';
 import DesignBrowser from './DesignBrowser';
 import OfflineBanner from './OfflineBanner';
@@ -251,7 +252,10 @@ export default function OrderBuilder() {
   return (
     <div className="order-builder">
       <OfflineBanner offline={offline} syncPending={syncPending} />
-      <button className="back-btn" onClick={() => navigate('/orders')}>← Orders</button>
+      <div className="order-flow-row">
+        <button className="back-btn" onClick={() => navigate('/orders')}>← Orders</button>
+        <StateFlow order={order} />
+      </div>
 
       <OrderTopBar
         order={order}
