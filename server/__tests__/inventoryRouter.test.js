@@ -96,6 +96,43 @@ test('increment updates existing rows and appends new ones in a single batch wri
   expect(data).toContainEqual({ range: 'A5', values: [['2', 'hat', 'red', '', 'OS']] });
 });
 
+test('pantone-suffixed colors match their plain-color row', async () => {
+  const res = await request(app).post('/inventory/increment').send([
+    { item: 'shirt', color: 'Black (440C)', style: 'unisex', size: 'M', qty: 5 },
+  ]);
+  expect(res.body).toMatchObject({ updated: 1, added: 0 });
+  const data = batchWriteRanges.mock.calls[0][1];
+  expect(data).toEqual([{ range: 'A2', values: [['15']] }]);
+});
+
+test('decrement matches when the sheet row carries the pantone suffix', async () => {
+  readRange.mockResolvedValue([
+    ['10', 'shirt', 'Black (419C)', 'unisex', 'M'],
+  ]);
+  const res = await request(app).post('/inventory/decrement').send([
+    { item: 'shirt', color: 'black', style: 'unisex', size: 'M', qty: 2 },
+  ]);
+  expect(res.body.updated).toBe(1);
+  const data = batchWriteRanges.mock.calls[0][1];
+  expect(data).toEqual([{ range: 'A2', values: [['8']] }]);
+});
+
+test('appended rows store the color without the pantone suffix', async () => {
+  await request(app).post('/inventory/increment').send([
+    { item: 'shirt', color: 'Azalea (677C)', style: 'youth', size: 'S', qty: 3 },
+  ]);
+  const data = batchWriteRanges.mock.calls[0][1];
+  expect(data).toEqual([{ range: 'A5', values: [['3', 'shirt', 'Azalea', 'youth', 'S']] }]);
+});
+
+test('GET /inventory returns normalized colors', async () => {
+  readRange.mockResolvedValue([
+    ['2', 'shirt', 'White (11-0601 TCX)', 'unisex softstyle', 'L'],
+  ]);
+  const res = await request(app).get('/inventory');
+  expect(res.body[0].color).toBe('white');
+});
+
 test('increment accumulates two increments to the same row', async () => {
   await request(app).post('/inventory/increment').send([
     { item: 'shirt', color: 'black', style: 'unisex', size: 'M', qty: 2 },

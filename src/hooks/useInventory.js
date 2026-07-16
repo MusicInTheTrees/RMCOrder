@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { getInventory } from '../api/inventory';
+import { normalizeColor } from '../utils/colorUtils';
 
 export function useInventory() {
   const [rows, setRows] = useState([]);
@@ -13,7 +14,7 @@ export function useInventory() {
   const getStock = useCallback((item, color, style, size) => {
     const match = rows.find(r =>
       r.item === (item || '').toLowerCase().trim() &&
-      r.color === (color || '').toLowerCase().trim() &&
+      normalizeColor(r.color) === normalizeColor(color) &&
       r.style === (style || '').toLowerCase().trim() &&
       r.size === (size || '').trim()
     );

@@ -1,4 +1,12 @@
-import { hexToRgb, rgbToHex, rgbToCmy, cmyToRgb } from '../utils/colorUtils';
+import { hexToRgb, rgbToHex, rgbToCmy, cmyToRgb, normalizeColor } from '../utils/colorUtils';
+
+test('normalizeColor strips a trailing pantone/code annotation', () => {
+  expect(normalizeColor('Black (440C)')).toBe('black');
+  expect(normalizeColor('White (11-0601 TCX)')).toBe('white');
+  expect(normalizeColor('  Athletic Grey ')).toBe('athletic grey');
+  expect(normalizeColor('')).toBe('');
+  expect(normalizeColor(undefined)).toBe('');
+});
 
 test('hexToRgb parses #ffffff', () => {
   expect(hexToRgb('#ffffff')).toEqual({ r: 255, g: 255, b: 255 });

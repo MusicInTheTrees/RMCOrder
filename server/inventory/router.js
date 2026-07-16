@@ -1,6 +1,7 @@
 const express = require('express');
 const requireAuth = require('../middleware/requireAuth');
 const { readRange, batchWriteRanges } = require('../sheets/client');
+const { normalizeColor, cleanColor } = require('./normalizeColor');
 const config = require('../config');
 
 const router = express.Router();
@@ -22,7 +23,7 @@ function parseRow([inStock, item, color, style, size]) {
   return {
     inStock: parseInt(inStock, 10) || 0,
     item: (item || '').toLowerCase().trim(),
-    color: (color || '').toLowerCase().trim(),
+    color: normalizeColor(color),
     style: (style || '').toLowerCase().trim(),
     size: (size || '').trim(),
   };
@@ -34,7 +35,7 @@ function findRowIndex(rows, entry) {
     if (!isDataRow(r)) return false;
     const p = parseRow(r);
     return p.item  === (entry.item || '').toLowerCase().trim() &&
-           p.color === (entry.color || '').toLowerCase().trim() &&
+           p.color === normalizeColor(entry.color) &&
            p.style === (entry.style || '').toLowerCase().trim() &&
            p.size  === (entry.size || '').trim();
   });
@@ -113,7 +114,7 @@ router.post('/increment', async (req, res) => {
         updates.push({ range: `A${idx + 2}`, values: [[String(newVal)]] });
         updated++;
       } else {
-        const newRow = [String(inc.qty), inc.item, inc.color, inc.style, inc.size];
+        const newRow = [String(inc.qty), inc.item, cleanColor(inc.color), inc.style, inc.size];
         rows.push(newRow);
         updates.push({ range: `A${rows.length + 1}`, values: [newRow] });
         added++;

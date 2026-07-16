@@ -1,3 +1,10 @@
+// "Black (440C)" / "White (11-0601 TCX)" and plain "black"/"white" are the
+// same physical color — a trailing parenthetical is just a pantone/code
+// annotation from the catalog. Mirrors server/inventory/normalizeColor.js.
+export function normalizeColor(color) {
+  return (color || '').toLowerCase().replace(/\s*\([^)]*\)\s*$/, '').trim();
+}
+
 export function hexToRgb(hex) {
   const m = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
   if (!m) return null;
